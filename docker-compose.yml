@@ -1,0 +1,10 @@
+services:
+  worker:
+    build:
+      context: .
+    volumes:
+      - ./data:/Hikka/data  # Теперь данные будут храниться в папке ./data внутри проекта
+    stop_signal: SIGINT
+    restart: unless-stopped
+    ports:
+      - "${EXTERNAL_PORT:-8080}:8080"
