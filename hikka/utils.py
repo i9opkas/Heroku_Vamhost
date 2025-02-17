@@ -941,7 +941,7 @@ def get_named_platform() -> str:
         return "🌼 HikkaHost"
 
     if main.IS_DOCKER:
-        return "🐳 Docker"
+        return "👁️ Vamhost"
 
     if main.IS_TERMUX:
         return "🕶 Termux"
@@ -961,10 +961,10 @@ def get_platform_emoji() -> str:
 
     BASE = "".join(
         (
-            "<emoji document_id={}>🪐</emoji>",
-            "<emoji document_id=5352934134618549768>🪐</emoji>",
-            "<emoji document_id=5352663371290271790>🪐</emoji>",
-            "<emoji document_id=5350822883314655367>🪐</emoji>",
+            "<emoji document_id={}>👁️</emoji>",
+            "<emoji document_id=5352934134618549768>👁️</emoji>",
+            "<emoji document_id=5352663371290271790>👁️</emoji>",
+            "<emoji document_id=5350822883314655367>👁️</emoji>",
         )
     )
 
