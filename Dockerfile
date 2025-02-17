@@ -38,4 +38,4 @@ WORKDIR /Hikka
 
 EXPOSE 8080
 
-ENTRYPOINT ["python", "-m", "Hikka"]
+ENTRYPOINT ["python", "-m", "hikka"]
