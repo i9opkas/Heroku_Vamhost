@@ -22,13 +22,13 @@ RUN /Hikka/venv/bin/pip install --no-warn-script-location --no-cache-dir -r /Hik
 # Вторая стадия
 FROM python:3.10-slim
 
-# Установка необходимых пакетов + AppArmor
+# Установка необходимых пакетов
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl libcairo2 git ffmpeg libmagic1 \
     libavcodec-dev libavutil-dev libavformat-dev \
     libswscale-dev libavdevice-dev neofetch wkhtmltopdf \
-    gcc python3-dev apparmor-utils iptables && \
+    gcc python3-dev iptables && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/*
 
 # Устанавливаем Node.js
@@ -36,51 +36,19 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем правильные права на файлы AppArmor
-RUN chmod 644 /etc/apparmor.d/*
-
-# Блокируем опасные утилиты через AppArmor
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.socat && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.socat
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.nc && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.nc
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.ncat && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.ncat
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.netcat && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.netcat
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.bash && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.bash
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.sh && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.sh
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.perl && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.perl
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.php && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.php
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.awk && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.awk
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.lua && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.lua
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.telnet && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.telnet
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.openssl && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.openssl
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.wget && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.wget
-
-RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.curl && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.curl
+# Блокировка исполнения нежелательных утилит
+RUN chmod -x /usr/bin/socat && \
+    chmod -x /usr/bin/nc && \
+    chmod -x /usr/bin/netcat && \
+    chmod -x /usr/bin/bash && \
+    chmod -x /usr/bin/sh && \
+    chmod -x /usr/bin/perl && \
+    chmod -x /usr/bin/php && \
+    chmod -x /usr/bin/awk && \
+    chmod -x /usr/bin/lua && \
+    chmod -x /usr/bin/telnet && \
+    chmod -x /usr/bin/wget && \
+    chmod -x /usr/bin/curl
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
 RUN iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && \
