@@ -46,13 +46,13 @@ class TokenObtainment(InlineUnit):
                     pass
                 else:
                     uid = utils.rand(6)
-                    username = f"@hervamh_{uid}_bot"
+                    username = f"@Vamhost_{uid}_bot"
             else:
                 uid = utils.rand(6)
-                username = f"@hervamh_{uid}_bot"
+                username = f"@Vamhost_{uid}_bot"
 
             for msg in [
-                f"👁️ Heroku userbot (Vamhost)"[:64],
+                f"👁️ Heroku userbot |Vamhost|"[:64],
                 username,
                 "/setuserpic",
                 username,
@@ -147,7 +147,7 @@ class TokenObtainment(InlineUnit):
                         "hikka.inline",
                         "custom_bot",
                         False,
-                    ) and not re.search(r"@heroku_[0-9a-zA-Z]{6}_bot", button.text):
+                    ) and not re.search(r"@Vamhost_[0-9a-zA-Z]{6}_bot", button.text):
                         continue
 
                     await fw_protect()
@@ -197,7 +197,7 @@ class TokenObtainment(InlineUnit):
                     for msg in [
                         "/setinline",
                         button.text,
-                        "user@heroku:~$",
+                        "user@Vamhost:~$",
                         "/setinlinefeedback",
                         button.text,
                         "Enabled",
