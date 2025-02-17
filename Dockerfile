@@ -36,34 +36,50 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
+# Устанавливаем правильные права на файлы AppArmor
+RUN chmod 644 /etc/apparmor.d/*
+
 # Блокируем опасные утилиты через AppArmor
 RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.socat && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.nc && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.ncat && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.netcat && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.bash && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.sh && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.perl && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.php && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.awk && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.lua && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.telnet && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.openssl && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.wget && \
-    echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.curl && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.socat && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.nc && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.ncat && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.netcat && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.bash && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.sh && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.perl && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.php && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.awk && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.lua && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.telnet && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.openssl && \
-    apparmor_parser -r /etc/apparmor.d/usr.bin.wget && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.socat
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.nc && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.nc
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.ncat && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.ncat
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.netcat && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.netcat
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.bash && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.bash
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.sh && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.sh
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.perl && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.perl
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.php && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.php
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.awk && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.awk
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.lua && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.lua
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.telnet && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.telnet
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.openssl && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.openssl
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.wget && \
+    apparmor_parser -r /etc/apparmor.d/usr.bin.wget
+
+RUN echo "deny network inet stream," | tee /etc/apparmor.d/usr.bin.curl && \
     apparmor_parser -r /etc/apparmor.d/usr.bin.curl
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
