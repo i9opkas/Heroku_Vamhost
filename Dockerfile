@@ -6,7 +6,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends git python3-dev gcc && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/*
 
-RUN COPY . /Hikka
+COPY . /Hikka
 
 RUN python -m venv /Hikka/venv
 
