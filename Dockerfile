@@ -39,3 +39,7 @@ WORKDIR /Hikka
 EXPOSE 8080
 
 ENTRYPOINT ["python", "-m", "hikka"]
+
+ENV SUPABASE_URL=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNudG1wa25mYWJybGx5c2xla2d0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczOTc3Mzg0OCwiZXhwIjoyMDU1MzQ5ODQ4fQ.PVDF2Z0Ag-RLKufCAA7R6R9E1Fb4jCBztSp3FUcBAzk
+
+ENV SUPABASE_KEY=https://sntmpknfabrllyslekgt.supabase.co
