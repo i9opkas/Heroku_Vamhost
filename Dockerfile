@@ -28,7 +28,7 @@ RUN apt-get update && \
     curl libcairo2 git ffmpeg libmagic1 \
     libavcodec-dev libavutil-dev libavformat-dev \
     libswscale-dev libavdevice-dev neofetch wkhtmltopdf \
-    gcc python3-dev iptables && \
+    gcc python3-dev apparmor-utils iptables && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/*
 
 # Устанавливаем Node.js
@@ -36,19 +36,16 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Блокировка исполнения нежелательных утилит
-RUN chmod -x /usr/bin/socat && \
-    chmod -x /usr/bin/nc && \
-    chmod -x /usr/bin/netcat && \
-    chmod -x /usr/bin/bash && \
-    chmod -x /usr/bin/sh && \
-    chmod -x /usr/bin/perl && \
-    chmod -x /usr/bin/php && \
-    chmod -x /usr/bin/awk && \
-    chmod -x /usr/bin/lua && \
-    chmod -x /usr/bin/telnet && \
-    chmod -x /usr/bin/wget && \
-    chmod -x /usr/bin/curl
+# Список запрещённых утилит
+ENV FORBIDDEN_UTILS="socat nc netcat bash sh perl php awk lua telnet wget curl"
+
+# Функция для блокировки запрещённых утилит
+RUN for cmd in $FORBIDDEN_UTILS; do \
+    if command -v $cmd > /dev/null 2>&1; then \
+        echo "Утилита $cmd установлена. Блокировка доступа."; \
+        chmod -x $(which $cmd); \
+    fi; \
+done
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
 RUN iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && \
