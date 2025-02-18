@@ -40,12 +40,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
 ENV FORBIDDEN_UTILS="socat nc netcat bash sh perl php awk lua telnet wget curl"
 
 # Функция для блокировки запрещённых утилит
-RUN for cmd in $FORBIDDEN_UTILS; do \
+RUN sh -c 'for cmd in $FORBIDDEN_UTILS; do \
     if command -v $cmd > /dev/null 2>&1; then \
         echo "Утилита $cmd установлена. Блокировка доступа."; \
         chmod -x $(which $cmd); \
     fi; \
-done
+done'
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
 RUN iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && \
