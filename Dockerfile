@@ -46,9 +46,7 @@ RUN for cmd in $FORBIDDEN_UTILS; do \
     fi; \
 done
 
-# Добавляем скрипт для постоянного контроля
 COPY --chmod=755 monitor.sh /monitor.sh
-RUN /bin/bash /monitor.sh
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
 RUN iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && \
@@ -71,5 +69,4 @@ WORKDIR /Hikka
 
 EXPOSE 8080
 
-# Запуск мониторинга в фоновом режиме + запуск приложения
-CMD [ "sh", "-c", "/monitor.sh & python -m hikka" ]
+CMD ["/bin/sh", "-c", "/monitor.sh && exec python -m hikka"]
