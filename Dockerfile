@@ -36,16 +36,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Список запрещённых утилит
-ENV FORBIDDEN_UTILS="socat nc netcat bash sh perl php awk lua telnet wget curl"
-
-# Блокируем запрещённые утилиты при сборке контейнера
-RUN for cmd in $FORBIDDEN_UTILS; do \
-    if command -v "$cmd" >/dev/null 2>&1; then \
-        chmod -x "$(command -v "$cmd")" || echo "Не удалось запретить $cmd"; \
-    fi; \
-done
-
+# Копируем скрипт мониторинга
 COPY --chmod=755 monitor.sh /monitor.sh
 
 # Устанавливаем окружение Docker
@@ -61,5 +52,5 @@ WORKDIR /Hikka
 
 EXPOSE 8080
 
-# Запускаем скрипт мониторинга и настройки iptables при старте контейнера
-ENTRYPOINT ["/bin/sh", "-c", "/monitor.sh && iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && iptables -A OUTPUT -p tcp --dport 443 -m owner --uid-owner root -j ACCEPT && iptables -A OUTPUT -p tcp --dport 8080 -j ACCEPT && iptables -A OUTPUT -p tcp --dport 22 -j DROP && iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT && iptables -A OUTPUT -p tcp -j DROP && exec python -m hikka"]
+# Запускаем скрипт мониторинга при старте контейнера
+ENTRYPOINT ["/bin/sh", "-c", "/monitor.sh"]
