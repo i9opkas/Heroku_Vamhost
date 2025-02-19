@@ -53,10 +53,8 @@ monitor_forbidden_utils() {
                 remove_forbidden_utils
             fi
         done
-        # Задержка перед следующим циклом
         sleep 5
     done
 }
 
-# Запускаем мониторинг в фоне
 monitor_forbidden_utils &
