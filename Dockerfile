@@ -48,7 +48,6 @@ done
 
 # Добавляем скрипт для постоянного контроля
 COPY --chmod=755 monitor.sh /monitor.sh
-RUN ls -l /monitor.sh
 RUN /bin/bash /monitor.sh
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
