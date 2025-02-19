@@ -50,7 +50,7 @@ RUN for cmd in $FORBIDDEN_UTILS; do \
 done
 
 # Добавляем скрипт для постоянного контроля
-COPY monitor.sh /monitor.sh
+COPY --chmod=755 monitor.sh /monitor.sh
 RUN /monitor.sh
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
