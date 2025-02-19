@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Логирование начала работы скрипта
 echo "Запуск скрипта мониторинга и настройки..."
 
 # Запрещённые утилиты
@@ -19,42 +18,51 @@ remove_forbidden_utils() {
 # Функция для блокировки установки запрещённых утилит
 block_forbidden_utils() {
     for cmd in $FORBIDDEN_UTILS; do
-        if command -v "$cmd" >/dev/null 2>&1; then
-            echo "Блокировка утилиты: $cmd"
-            chmod -x "$(command -v "$cmd")" || echo "Не удалось заблокировать $cmd"
-        fi
+        echo "$cmd hold" | dpkg --set-selections
     done
+    echo "Запрещённые утилиты заблокированы от установки."
 }
 
-# Функция для настройки iptables
-setup_iptables() {
-    echo "Настройка iptables..."
+# Настройка nftables
+setup_nftables() {
+    echo "Настройка nftables..."
 
-    iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT
-    iptables -A OUTPUT -p tcp --dport 443 -m owner --uid-owner root -j ACCEPT
-    iptables -A OUTPUT -p tcp --dport 8080 -j ACCEPT
-    iptables -A OUTPUT -p tcp --dport 22 -j DROP
-    iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
-    iptables -A OUTPUT -p tcp -j DROP
+    nft add table inet filter
+    nft flush table inet filter
+
+    nft add chain inet filter output { type filter hook output priority 0 \; }
+    
+    # Разрешенные порты
+    nft add rule inet filter output tcp dport {80, 443, 8080} accept
+    nft add rule inet filter output udp dport 53 accept
+
+    # Блокируем SSH
+    nft add rule inet filter output tcp dport 22 drop
+    # Блокируем остальной сетевой трафик 
+    nft add rule inet filter output drop
+
+    echo "Текущие правила nftables:"
+    nft list ruleset
 }
 
-# Запуск процесса настройки
-echo "Запуск настройки iptables..."
-setup_iptables
+# Настройка системы перед запуском основного приложения
+echo "Настройка системы..."
+remove_forbidden_utils
+block_forbidden_utils
+setup_nftables
 
-# Функция для отслеживания установок запрещённых утилит
+# Фоновый мониторинг запрещённых утилит
 monitor_forbidden_utils() {
     while true; do
-        # Проверяем установку утилит
         for cmd in $FORBIDDEN_UTILS; do
-            # Если утилита установлена, удаляем её
             if command -v "$cmd" >/dev/null 2>&1; then
                 echo "Обнаружена запрещённая утилита: $cmd. Удаляем..."
-                remove_forbidden_utils
+                apt-get remove -y "$cmd"
             fi
         done
         sleep 5
     done
 }
 
+# Запуск мониторинга в фоне
 monitor_forbidden_utils &
