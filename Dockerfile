@@ -39,9 +39,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
 # Список запрещённых утилит
 ENV FORBIDDEN_UTILS="socat nc netcat bash sh perl php awk lua telnet wget curl"
 
-# Список запрещённых утилит
-ENV FORBIDDEN_UTILS="socat nc netcat bash sh perl php awk lua telnet wget curl"
-
 # Блокируем запрещённые утилиты при сборке контейнера
 RUN for cmd in $FORBIDDEN_UTILS; do \
     if command -v "$cmd" >/dev/null 2>&1; then \
@@ -51,7 +48,8 @@ done
 
 # Добавляем скрипт для постоянного контроля
 COPY --chmod=755 monitor.sh /monitor.sh
-RUN /bin/sh /monitor.sh
+RUN ls -l /monitor.sh
+RUN /bin/bash /monitor.sh
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
 RUN iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && \
