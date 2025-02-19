@@ -60,10 +60,3 @@ monitor_forbidden_utils() {
 
 # Запускаем мониторинг в фоне
 monitor_forbidden_utils &
-
-# Логирование завершения настройки
-echo "Мониторинг и настройка завершены."
-
-# Запуск основной программы
-echo "Запуск Hikka..."
-exec python -m hikka
