@@ -48,14 +48,6 @@ done
 
 COPY --chmod=755 monitor.sh /monitor.sh
 
-# ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
-RUN iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && \
-    iptables -A OUTPUT -p tcp --dport 443 -m owner --uid-owner root -j ACCEPT && \
-    iptables -A OUTPUT -p tcp --dport 8080 -j ACCEPT && \
-    iptables -A OUTPUT -p tcp --dport 22 -j DROP && \
-    iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT && \
-    iptables -A OUTPUT -p tcp -j DROP
-
 # Устанавливаем окружение Docker
 ENV DOCKER=true \
     GIT_PYTHON_REFRESH=quiet \
@@ -69,4 +61,5 @@ WORKDIR /Hikka
 
 EXPOSE 8080
 
-CMD ["/bin/sh", "-c", "/monitor.sh && exec python -m hikka"]
+# Запускаем скрипт мониторинга и настройки iptables при старте контейнера
+ENTRYPOINT ["/bin/sh", "-c", "/monitor.sh && iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && iptables -A OUTPUT -p tcp --dport 443 -m owner --uid-owner root -j ACCEPT && iptables -A OUTPUT -p tcp --dport 8080 -j ACCEPT && iptables -A OUTPUT -p tcp --dport 22 -j DROP && iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT && iptables -A OUTPUT -p tcp -j DROP && exec python -m hikka"]
