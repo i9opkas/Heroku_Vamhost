@@ -1,4 +1,4 @@
-FROM python:3.10-slim AS builder
+	FROM python:3.10-slim AS builder
 
 ENV PIP_NO_CACHE_DIR=1
 
@@ -51,8 +51,7 @@ done
 
 # Добавляем скрипт для постоянного контроля
 COPY monitor.sh /monitor.sh
-USER root
-RUN chmod +x /monitor.sh
+RUN /monitor.sh
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
 RUN iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && \
