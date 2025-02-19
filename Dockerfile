@@ -51,7 +51,7 @@ done
 
 # Добавляем скрипт для постоянного контроля
 COPY --chmod=755 monitor.sh /monitor.sh
-RUN /monitor.sh
+RUN /bin/sh /monitor.sh
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
 RUN iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && \
