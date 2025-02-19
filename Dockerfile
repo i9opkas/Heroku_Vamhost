@@ -28,13 +28,13 @@ RUN apt-get update && \
     curl libcairo2 git ffmpeg libmagic1 \
     libavcodec-dev libavutil-dev libavformat-dev \
     libswscale-dev libavdevice-dev neofetch wkhtmltopdf gcc python3-dev iptables nftables && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \  # Удаляем кеши
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \
     apt-get clean
 
 # Установка Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \  # Очищаем кеши после установки nodejs
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \
     apt-get clean
 
 # Установка окружения
