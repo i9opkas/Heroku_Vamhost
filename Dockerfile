@@ -27,13 +27,15 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl libcairo2 git ffmpeg libmagic1 \
     libavcodec-dev libavutil-dev libavformat-dev \
-    libswscale-dev libavdevice-dev neofetch wkhtmltopdf gcc python3-dev iptables && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/*
+    libswscale-dev libavdevice-dev neofetch wkhtmltopdf gcc python3-dev iptables nftables && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \  # Удаляем кеши
+    apt-get clean
 
 # Установка Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \  # Очищаем кеши после установки nodejs
+    apt-get clean
 
 # Установка окружения
 ENV DOCKER=true \
@@ -50,5 +52,5 @@ COPY --chmod=755 monitor.sh /monitor.sh
 # Устанавливаем рабочую директорию
 WORKDIR /Hikka
 
-# Запускаем скрипт мониторинга и хероку 
+# Запускаем скрипт мониторинга и основную программу
 ENTRYPOINT ["/bin/sh", "-c", "/monitor.sh && python -m hikka"]
