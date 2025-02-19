@@ -39,12 +39,15 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
 # Список запрещённых утилит
 ENV FORBIDDEN_UTILS="socat nc netcat bash sh perl php awk lua telnet wget curl"
 
+# Список запрещённых утилит
+ENV FORBIDDEN_UTILS="socat nc netcat bash sh perl php awk lua telnet wget curl"
+
 # Блокируем запрещённые утилиты при сборке контейнера
-RUN sh -c 'for cmd in $FORBIDDEN_UTILS; do \
-    if command -v $cmd > /dev/null 2>&1; then \
-        chmod -x $(which $cmd); \
+RUN for cmd in $FORBIDDEN_UTILS; do \
+    if command -v "$cmd" >/dev/null 2>&1; then \
+        chmod -x "$(command -v "$cmd")" || echo "Не удалось запретить $cmd"; \
     fi; \
-done'
+done
 
 # Добавляем скрипт для постоянного контроля
 COPY monitor.sh /monitor.sh
