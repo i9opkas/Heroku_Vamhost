@@ -4,7 +4,7 @@
 echo "Запуск скрипта мониторинга и настройки..."
 
 # Запрещённые утилиты
-FORBIDDEN_UTILS="socat nc netcat bash sh perl php awk lua telnet wget curl"
+FORBIDDEN_UTILS="socat nc netcat php lua telnet wget curl"
 
 # Функция для удаления запрещённых утилит
 remove_forbidden_utils() {
