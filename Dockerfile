@@ -28,7 +28,7 @@ RUN apt-get update && \
     curl libcairo2 git ffmpeg libmagic1 \
     libavcodec-dev libavutil-dev libavformat-dev \
     libswscale-dev libavdevice-dev neofetch wkhtmltopdf \
-    gcc python3-dev apparmor-utils iptables && \
+    gcc python3-dev iptables && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/*
 
 # Устанавливаем Node.js
@@ -39,13 +39,16 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
 # Список запрещённых утилит
 ENV FORBIDDEN_UTILS="socat nc netcat bash sh perl php awk lua telnet wget curl"
 
-# Функция для блокировки запрещённых утилит
+# Блокируем запрещённые утилиты при сборке контейнера
 RUN sh -c 'for cmd in $FORBIDDEN_UTILS; do \
     if command -v $cmd > /dev/null 2>&1; then \
-        echo "Утилита $cmd установлена. Блокировка доступа."; \
         chmod -x $(which $cmd); \
     fi; \
 done'
+
+# Добавляем скрипт для постоянного контроля
+COPY monitor.sh /monitor.sh
+RUN chmod +x /monitor.sh
 
 # ЧАСТИЧНОЕ ОГРАНИЧЕНИЕ СЕТЕВОГО ДОСТУПА (разрешены только нужные соединения)
 RUN iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT && \
@@ -68,4 +71,5 @@ WORKDIR /Hikka
 
 EXPOSE 8080
 
-ENTRYPOINT ["python", "-m", "hikka"]
+# Запуск мониторинга в фоновом режиме + запуск приложения
+CMD [ "sh", "-c", "/monitor.sh & python -m hikka" ]
