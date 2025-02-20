@@ -137,7 +137,7 @@ class Help(loader.Module):
         )
 
         reply = "{} <b>{}</b>:".format(
-            "<blockquote><emoji document_id=5134452506935427991>🪐</emoji>",
+            "<blockquote><emoji document_id=5134452506935427991>👁️</emoji>",
             _name,
             "</blockquote>"
         )
@@ -206,7 +206,7 @@ class Help(loader.Module):
             ),
         )
 
-    @loader.command(ru_doc="[args] | Помощь с вашими модулями!", ua_doc="[args] | допоможіть з вашими модулями!", de_doc="[args] | Hilfe mit deinen Modulen!")
+    @loader.command(ru_doc="[args] | Помощь с вашими модулями!", ua_doc="[args] | допомога з вашими модулями!", de_doc="[args] | Hilfe mit deinen Modulen!")
     async def help(self, message: Message):
         """[args] | help with your modules!"""
         args = utils.get_args_raw(message)
@@ -333,7 +333,7 @@ class Help(loader.Module):
             ),
         )
 
-    @loader.command(ru_doc="| Ссылка на чат помощи", ua_doc="| посилання для чату служби підтримки", de_doc="| Link zum Support-Chat")
+    @loader.command(ru_doc="| Ссылка на чат помощи", ua_doc="| посилання до чату служби підтримки", de_doc="| Link zum Support-Chat")
     async def support(self, message):
         """| link for support chat"""
        
@@ -343,7 +343,7 @@ class Help(loader.Module):
                 (
                     utils.get_platform_emoji()
                     if self._client.hikka_me.premium and CUSTOM_EMOJIS
-                    else "🪐"
+                    else "👁️"
                 )
             ),
         )
