@@ -43,10 +43,6 @@ class UpdaterMod(loader.Module):
         )
         asyncio.create_task(self.schedule_restart())  # Запуск фоновой задачи
 
-    async def _add_folder(self):
-        """Фіктивний метод, щоб уникнути помилки"""
-        logger.info("Dummy _add_folder() called")
-
     async def schedule_restart(self):
         while True:
             now = datetime.datetime.utcnow() + datetime.timedelta(hours=3)  
@@ -113,10 +109,12 @@ class UpdaterMod(loader.Module):
         handler.setLevel(logging.CRITICAL)
 
         for client in self.allclients:
-            if client is not msg_obj.client:
+            if not isinstance(msg_obj, InlineCall) or client is not msg_obj._client:
                 await client.disconnect()
 
-        await msg_obj.client.disconnect()
+        if isinstance(msg_obj, (InlineCall, Message)):
+            await msg_obj._client.disconnect()
+
         restart()
 
     async def download_common(self):
@@ -236,4 +234,4 @@ class UpdaterMod(loader.Module):
         await self.inline.bot.edit_message_text(
             inline_message_id=ms,
             text=self.inline.sanitise_text(msg),
-                        )
+            )
