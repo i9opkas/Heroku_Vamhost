@@ -26,7 +26,7 @@ RUN useradd -m -s /bin/bash hikka
 RUN mkdir -p /home/hikka/Hikka && chown -R hikka:hikka /home/hikka
 
 # Копіюємо файли з builder-стадії в домашню директорію користувача `hikka`
-COPY --from=builder /Hikka/ /home/hikka/Hikka/
+COPY --from=builder /Hikka/ /home/hikka/
 
 # Виставляємо робочу директорію
 WORKDIR /home/hikka/Hikka
