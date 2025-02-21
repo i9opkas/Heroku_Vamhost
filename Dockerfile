@@ -55,4 +55,4 @@ RUN chmod +x /entrypoint.sh
 WORKDIR /Hikka
 
 # Запускаємо cкрипт моніторингу i Heroku 
-ENTRYPOINT ["/bin/sh", "/entrypoint.sh && python -m hikka"]
+ENTRYPOINT ["/bin/sh", "-c", "/entrypoint.sh && python -m hikka"]
