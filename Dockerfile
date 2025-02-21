@@ -27,7 +27,6 @@ RUN useradd -m -s /bin/bash hikka
 # Налаштовуємо права доступу для Hikka
 RUN chown -R hikka:hikka /Hikka
 
-RUN chown -R hikka:hikka /data
 # Виставляємо робочу директорію
 WORKDIR /Hikka
 
