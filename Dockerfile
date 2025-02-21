@@ -1,35 +1,40 @@
-# Стадия сборки (builder)
+# Стадія збірки (builder)
 FROM python:3.10-slim AS builder
 
-# Устанавливаем зависимости для сборки
+# Встановлюємо необхідні пакети для збірки
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git python3-dev gcc && \
+    git python3-dev gcc build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-# Копируем код
+# Копіюємо код бота
+WORKDIR /Hikka
 COPY . /Hikka
 
-# Создаём виртуальное окружение
-RUN python -m venv /Hikka/venv
-RUN /Hikka/venv/bin/python -m pip install --upgrade pip
-RUN /Hikka/venv/bin/pip install --no-cache-dir -r /Hikka/requirements.txt
+# Створюємо віртуальне оточення та встановлюємо залежності
+RUN python -m venv /Hikka/venv && \
+    /Hikka/venv/bin/python -m pip install --upgrade pip && \
+    /Hikka/venv/bin/pip install --no-cache-dir -r /Hikka/requirements.txt
 
-# Стадия финального образа
+# Стадія фінального образу
 FROM python:3.10-slim
 
-# Устанавливаем необходимые пакеты и Firejail
+# Встановлюємо необхідні пакети
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl libcairo2 git ffmpeg libmagic1 \
-    gcc python3-dev iptables firejail && \
+    curl libcairo2 git ffmpeg libmagic1 iptables && \
     rm -rf /var/lib/apt/lists/*
 
-# Копируем файлы из builder-стадии
+# Копіюємо файли з builder-стадії
 COPY --from=builder /Hikka /Hikka
 
-# Устанавливаем iptables во время старта контейнера
+# Виставляємо робочу директорію
+WORKDIR /Hikka
+
+# Робимо entrypoint.sh виконуваним
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-WORKDIR /Hikka
+# Відкриваємо необхідний порт
 EXPOSE 8080
-ENTRYPOINT ["/entrypoint.sh"]
+
+# Запускаємо контейнер
+CMD ["/entrypoint.sh"]
