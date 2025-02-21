@@ -1,15 +1,9 @@
 #!/bin/sh
 set -e
 
-echo "Налаштовуємо iptables..."
-iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT
-iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT
-iptables -A OUTPUT -p tcp --dport 8080 -j ACCEPT
-iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
-iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
-iptables -A OUTPUT -p tcp --dport 22 -j DROP
-iptables -A OUTPUT -p tcp -j DROP
-echo "iptables налаштований."
+echo "Налаштовуємо nftables..."
+nft -f /etc/nftables.conf
+echo "nftables налаштований."
 
 FORBIDDEN_UTILS="socat nc netcat php lua telnet ncat cryptcat rlwrap msfconsole hydra medusa john hashcat sqlmap metasploit empire cobaltstrike ettercap bettercap responder mitmproxy evil-winrm chisel ligolo revshells powershell certutil bitsadmin smbclient impacket-scripts smbmap crackmapexec enum4linux ldapsearch onesixtyone snmpwalk zphisher socialfish blackeye weeman aircrack-ng reaver pixiewps wifite kismet horst wash bully wpscan commix xerosploit slowloris hping iodine iodine-client iodine-server"
 
@@ -21,7 +15,6 @@ for cmd in $FORBIDDEN_UTILS; do
     fi
 done
 
-# Перевірка небажаних утиліт в циклі
 echo "Моніторинг небажаних утиліт..."
 ( while true; do
     for cmd in $FORBIDDEN_UTILS; do
@@ -33,4 +26,4 @@ echo "Моніторинг небажаних утиліт..."
     sleep 10
 done ) &
 
-echo "starting Heroku.."
+echo "starting Heroku..."
