@@ -17,16 +17,16 @@ RUN /Hikka/venv/bin/pip install --no-cache-dir -r /Hikka/requirements.txt
 # Стадия финального образа
 FROM python:3.10-slim
 
-# Устанавливаем необходимые пакеты
+# Устанавливаем необходимые пакеты и Firejail
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl libcairo2 git ffmpeg libmagic1 \
-    gcc python3-dev iptables apparmor-utils && \
+    gcc python3-dev iptables firejail && \
     rm -rf /var/lib/apt/lists/*
 
 # Копируем файлы из builder-стадии
 COPY --from=builder /Hikka /Hikka
 
-# Устанавливаем AppArmor и iptables во время старта контейнера
+# Устанавливаем iptables во время старта контейнера
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
