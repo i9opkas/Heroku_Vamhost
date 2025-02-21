@@ -36,4 +36,4 @@ while true; do
 done &
 echo "Запуск Heroku..."
 
-exec firejail --net=eth0 python -m hikka
+exec firejail --net=eth0 python -m hikka --root
