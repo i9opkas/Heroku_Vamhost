@@ -55,4 +55,4 @@ RUN chmod +x /entrypoint.sh
 WORKDIR /Hikka
 
 # Запускаємо тільки скрипт моніторингу
-ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh && python -m hikka"]
