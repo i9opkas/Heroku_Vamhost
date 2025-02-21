@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Setting up AppArmor and iptables..."
+echo "Setting up iptables..."
 
 # PARTIAL NETWORK ACCESS RESTRICTION (only necessary connections are allowed)
 iptables -A OUTPUT -p tcp --dport 80 -m owner --uid-owner root -j ACCEPT
@@ -36,4 +36,4 @@ while true; do
 done &
 echo "Запуск Heroku..."
 
-exec firejail --net=eth0 python -m hikka --root
+exec python -m hikka --root
