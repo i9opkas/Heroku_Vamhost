@@ -1,40 +1,41 @@
-# Стадія збірки (builder)
+# Стадія збірки
 FROM python:3.10-slim AS builder
 
-# Встановлюємо необхідні пакети для збірки
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git python3-dev gcc build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-# Копіюємо код бота
 WORKDIR /Hikka
 COPY . /Hikka
 
-# Створюємо віртуальне оточення та встановлюємо залежності
 RUN python -m venv /Hikka/venv && \
     /Hikka/venv/bin/python -m pip install --upgrade pip && \
     /Hikka/venv/bin/pip install --no-cache-dir -r /Hikka/requirements.txt
 
-# Стадія фінального образу
+# Фінальна стадія
 FROM python:3.10-slim
 
-# Встановлюємо необхідні пакети
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl libcairo2 git ffmpeg libmagic1 iptables && \
     rm -rf /var/lib/apt/lists/*
 
-# Копіюємо файли з builder-стадії
 COPY --from=builder /Hikka /Hikka
 
+# Створюємо користувача `hikka`
+RUN useradd -m -s /bin/bash hikka
+
+# Налаштовуємо права доступу для Hikka
+RUN chown -R hikka:hikka /Hikka
+RUN chown -R hikka:hikka /data
 # Виставляємо робочу директорію
 WORKDIR /Hikka
 
-# Робимо entrypoint.sh виконуваним
+# Копіюємо та налаштовуємо entrypoint.sh
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Відкриваємо необхідний порт
+# Відкриваємо порт
 EXPOSE 8080
 
-# Запускаємо контейнер
+# Запускаємо контейнер від root, але потім переходимо на `hikka`
 CMD ["/entrypoint.sh"]
