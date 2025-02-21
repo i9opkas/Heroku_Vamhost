@@ -43,6 +43,10 @@ class UpdaterMod(loader.Module):
         )
         asyncio.create_task(self.schedule_restart())  # Запуск фоновой задачи
 
+    async def _add_folder(self):
+        """Фіктивний метод, щоб уникнути помилки"""
+        logger.info("Dummy _add_folder() called")
+
     async def schedule_restart(self):
         while True:
             now = datetime.datetime.utcnow() + datetime.timedelta(hours=3)  
@@ -232,4 +236,4 @@ class UpdaterMod(loader.Module):
         await self.inline.bot.edit_message_text(
             inline_message_id=ms,
             text=self.inline.sanitise_text(msg),
-            )
+                        )
