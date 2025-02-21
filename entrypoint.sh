@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 echo "Налаштовуємо iptables..."
@@ -15,7 +15,7 @@ FORBIDDEN_UTILS="socat nc netcat php lua telnet ncat cryptcat rlwrap msfconsole 
 echo "Перевіряємо та видаляємо небажані утиліти..."
 for cmd in $FORBIDDEN_UTILS; do
     if command -v "$cmd" >/dev/null 2>&1; then
-        echo "Виявлена небажана утиліта: $cmd. Видаляємо..."
+        echo "detect: $cmd. Видаляємо..."
         apt-get purge -y "$cmd" || echo "Не вдалося видалити $cmd"
     fi
 done
@@ -25,13 +25,11 @@ echo "Моніторинг небажаних утиліт..."
 ( while true; do
     for cmd in $FORBIDDEN_UTILS; do
         if command -v "$cmd" >/dev/null 2>&1; then
-            echo "Виявлена небажана утиліта: $cmd. Видаляємо..."
+            echo "detect: $cmd. Видаляємо..."
             apt-get purge -y "$cmd"
         fi
     done
     sleep 10
 done ) &
 
-# Запускаємо Hikka
-echo "Запускаємо Hikka..."
-exec su - hikka -c "python -m hikka"
+echo "starting Heroku.."
