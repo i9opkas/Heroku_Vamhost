@@ -46,11 +46,8 @@ ENV DOCKER=true \
 # Копируем файлы из builder-стадии
 COPY --from=builder /Hikka /Hikka
 
-# Копируем скрипт для мониторинга
-COPY --chmod=755 monitor.sh /monitor.sh
-
 # Устанавливаем рабочую директорию
 WORKDIR /Hikka
 
 # Запускаем скрипт мониторинга и основную программу
-ENTRYPOINT ["/bin/sh", "-c", "/monitor.sh && python -m hikka"]
+ENTRYPOINT ["python -m hikka"]
