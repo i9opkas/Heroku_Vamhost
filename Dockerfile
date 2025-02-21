@@ -54,5 +54,8 @@ RUN chmod +x /entrypoint.sh
 # Встановлюємо робочу директорію
 WORKDIR /Hikka
 
+# порт для правильної роботи Heroku 
+EXPOSE 8080
+
 # Запускаємо cкрипт моніторингу i Heroku 
 ENTRYPOINT ["/bin/sh", "-c", "/entrypoint.sh && exec python -m hikka"]
