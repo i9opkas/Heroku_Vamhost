@@ -1,34 +1,34 @@
-# Стадія збірки
+# Стадия сборки
 FROM python:3.10-slim AS builder
 
 ENV PIP_NO_CACHE_DIR=1
 
-# Установка базових пакунків для збірки
+# Установка базовых пакетов
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git python3-dev gcc build-essential && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/*
 
-# Копіюємо код в контейнер
+# Копируем код в контейнер
 COPY . /Hikka
 
-# Створюємо віртуальне середовище
+# Создаём виртуальное окружение
 RUN python -m venv /Hikka/venv
 
-# Оновлюємо pip
+# Обновляем pip
 RUN /Hikka/venv/bin/python -m pip install --upgrade pip
 
-# Встановлюємо залежності проекту
+# Устанавливаем зависимости проекта
 RUN /Hikka/venv/bin/pip install --no-warn-script-location --no-cache-dir -r /Hikka/requirements.txt
 
-# Фінальна стадія
+# Финальная стадия
 FROM python:3.10-slim
 
-# Установка необхідних пакунків
+# Установка необходимых пакетов
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl libcairo2 git ffmpeg libmagic1 \
     libavcodec-dev libavutil-dev libavformat-dev \
-    libswscale-dev libavdevice-dev neofetch wkhtmltopdf gcc python3-dev iptables nftables && \
+    libswscale-dev libavdevice-dev neofetch wkhtmltopdf gcc python3-dev nftables && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \
     apt-get clean
 
@@ -38,24 +38,27 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \
     apt-get clean
 
-# Налаштування середовища
+# Настройки окружения
 ENV DOCKER=true \
     GIT_PYTHON_REFRESH=quiet \
     PIP_NO_CACHE_DIR=1 \
     PATH="/Hikka/venv/bin:$PATH"
 
-# Копіюємо файли з builder-стадії
+# Копируем файлы из builder-стадии
 COPY --from=builder /Hikka /Hikka
 
-# Копіюємо скрипт для моніторингу
+# Копируем скрипт
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Встановлюємо робочу директорію
+# Копируем конфиг для nftables
+COPY nftables.conf /etc/nftables.conf
+
+# Указываем рабочую директорию
 WORKDIR /Hikka
 
-# порт для правильної роботи Heroku 
+# Открываем порт
 EXPOSE 8080
 
-# Запускаємо cкрипт моніторингу i Heroku 
+# Запускаем скрипт и приложение
 ENTRYPOINT ["/bin/sh", "-c", "/entrypoint.sh && exec python -m hikka"]
