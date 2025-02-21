@@ -1,42 +1,58 @@
 # Стадія збірки
 FROM python:3.10-slim AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git python3-dev gcc build-essential && \
-    rm -rf /var/lib/apt/lists/*
+ENV PIP_NO_CACHE_DIR=1
 
-WORKDIR /Hikka
+# Установка базових пакунків для збірки
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git python3-dev gcc build-essential && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/*
+
+# Копіюємо код в контейнер
 COPY . /Hikka
 
-RUN python -m venv /Hikka/venv && \
-    /Hikka/venv/bin/python -m pip install --upgrade pip && \
-    /Hikka/venv/bin/pip install --no-cache-dir -r /Hikka/requirements.txt
+# Створюємо віртуальне середовище
+RUN python -m venv /Hikka/venv
+
+# Оновлюємо pip
+RUN /Hikka/venv/bin/python -m pip install --upgrade pip
+
+# Встановлюємо залежності проекту
+RUN /Hikka/venv/bin/pip install --no-warn-script-location --no-cache-dir -r /Hikka/requirements.txt
 
 # Фінальна стадія
 FROM python:3.10-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl libcairo2 git ffmpeg libmagic1 iptables && \
-    rm -rf /var/lib/apt/lists/*
+# Установка необхідних пакунків
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl libcairo2 git ffmpeg libmagic1 \
+    libavcodec-dev libavutil-dev libavformat-dev \
+    libswscale-dev libavdevice-dev neofetch wkhtmltopdf gcc python3-dev iptables nftables && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \
+    apt-get clean
 
-# Створюємо користувача `hikka`
-RUN useradd -m -s /bin/bash hikka
+# Установка Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \
+    apt-get clean
 
-# Налаштовуємо права доступу для Hikka
-RUN mkdir -p /home/hikka/Hikka && chown -R hikka:hikka /home/hikka
+# Налаштування середовища
+ENV DOCKER=true \
+    GIT_PYTHON_REFRESH=quiet \
+    PIP_NO_CACHE_DIR=1 \
+    PATH="/Hikka/venv/bin:$PATH"
 
-# Копіюємо файли з builder-стадії в домашню директорію користувача `hikka`
-COPY --from=builder /Hikka/ /home/hikka/
+# Копіюємо файли з builder-стадії
+COPY --from=builder /Hikka /Hikka
 
-# Виставляємо робочу директорію
-WORKDIR /home/hikka/Hikka
-
-# Копіюємо та налаштовуємо entrypoint.sh
+# Копіюємо скрипт для моніторингу
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Відкриваємо порт
-EXPOSE 8080
+# Встановлюємо робочу директорію
+WORKDIR /Hikka
 
-# Запускаємо контейнер від root, але потім переходимо на `hikka`
-CMD ["/entrypoint.sh"]
+# Запускаємо тільки скрипт моніторингу
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
