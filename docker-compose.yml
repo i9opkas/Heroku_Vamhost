@@ -3,7 +3,7 @@ services:
     build:
       context: .
     volumes:
-      - ./data:/Hikka/data  # Теперь данные будут храниться в папке ./data внутри проекта
+      - ./data:
     stop_signal: SIGINT
     restart: unless-stopped
     ports:
