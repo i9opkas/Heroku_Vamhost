@@ -34,4 +34,4 @@ done ) &
 
 # Запускаємо Hikka
 echo "Запускаємо Hikka..."
-exec su hikka -c "/Hikka/venv/bin/python -m hikka"
+exec su - hikka -c "/Hikka/venv/bin/python -m hikka"
