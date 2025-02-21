@@ -19,16 +19,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl libcairo2 git ffmpeg libmagic1 iptables && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /Hikka /Hikka
-
 # Створюємо користувача `hikka`
 RUN useradd -m -s /bin/bash hikka
 
 # Налаштовуємо права доступу для Hikka
-RUN chown -R hikka:hikka /Hikka
+RUN mkdir -p /home/hikka/Hikka && chown -R hikka:hikka /home/hikka
+
+# Копіюємо файли з builder-стадії в домашню директорію користувача `hikka`
+COPY --from=builder /Hikka/ /home/hikka/Hikka/
 
 # Виставляємо робочу директорію
-WORKDIR /Hikka
+WORKDIR /home/hikka/Hikka
 
 # Копіюємо та налаштовуємо entrypoint.sh
 COPY entrypoint.sh /entrypoint.sh
