@@ -47,7 +47,9 @@ ENV DOCKER=true \
 # Копируем файлы из builder-стадии
 COPY --from=builder /Hikka /Hikka
 
-# Копируем скрипт
+# Копируем скрипты
+COPY netmonitor.sh /netmonitor.sh
+RUN chmod +x /netmonitor.sh
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
@@ -60,5 +62,5 @@ WORKDIR /Hikka
 # Открываем порт
 EXPOSE 8080
 
-# Запускаем скрипт и приложение
-ENTRYPOINT ["/bin/sh", "-c", "/entrypoint.sh && exec python -m hikka"]
+# Запускаем скрипты и приложение
+ENTRYPOINT ["/bin/sh", "-c", "/netmonitor.sh & /entrypoint.sh && exec python -m hikka"]
