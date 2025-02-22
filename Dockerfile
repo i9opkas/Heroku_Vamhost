@@ -12,27 +12,13 @@ RUN apt-get update && \
 COPY . /Hikka
 
 # Создаём виртуальное окружение
-# Стадия сборки
-FROM python:3.10-slim AS builder
-
-ENV PIP_NO_CACHE_DIR=1
-
-# Установка базовых пакетов и зависимостей для сборки
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git python3-dev gcc build-essential curl libcairo2 \
-    ffmpeg libmagic1 libavcodec-dev libavutil-dev libavformat-dev libswscale-dev libavdevice-dev neofetch \
-    wkhtmltopdf && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/*
-
-# Копируем код в контейнер
-COPY . /Hikka
-
-# Создаём виртуальное окружение
 RUN python -m venv /Hikka/venv
 
-# Обновляем pip и устанавливаем зависимости
-RUN /Hikka/venv/bin/python -m pip install --upgrade pip && \
-    /Hikka/venv/bin/pip install --no-warn-script-location --no-cache-dir -r /Hikka/requirements.txt
+# Обновляем pip
+RUN /Hikka/venv/bin/python -m pip install --upgrade pip
+
+# Устанавливаем зависимости проекта
+RUN /Hikka/venv/bin/pip install --no-warn-script-location --no-cache-dir -r /Hikka/requirements.txt
 
 # Финальная стадия
 FROM python:3.10-slim
@@ -40,9 +26,9 @@ FROM python:3.10-slim
 # Установка необходимых пакетов
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    curl libcairo2 ffmpeg libmagic1 \
+    curl libcairo2 git ffmpeg libmagic1 \
     libavcodec-dev libavutil-dev libavformat-dev \
-    libswscale-dev libavdevice-dev neofetch wkhtmltopdf gcc python3-dev nodejs && \
+    libswscale-dev libavdevice-dev neofetch wkhtmltopdf gcc python3-dev && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \
     apt-get clean
 
