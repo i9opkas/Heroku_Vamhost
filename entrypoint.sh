@@ -1,10 +1,6 @@
 #!/bin/bash
 set -e
 
-echo "Налаштовуємо nftables..."
-nft -f /etc/nftables.conf
-echo "nftables налаштований."
-
 FORBIDDEN_UTILS="socat nc netcat php lua telnet ncat cryptcat rlwrap msfconsole hydra medusa john hashcat sqlmap metasploit empire cobaltstrike ettercap bettercap responder mitmproxy evil-winrm chisel ligolo revshells powershell certutil bitsadmin smbclient impacket-scripts smbmap crackmapexec enum4linux ldapsearch onesixtyone snmpwalk zphisher socialfish blackeye weeman aircrack-ng reaver pixiewps wifite kismet horst wash bully wpscan commix xerosploit slowloris hping iodine iodine-client iodine-server"
 
 echo "Перевіряємо та видаляємо небажані утиліти..."
