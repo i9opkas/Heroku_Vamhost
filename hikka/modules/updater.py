@@ -28,7 +28,6 @@ from ..inline.types import InlineCall
 
 logger = logging.getLogger(__name__)
 
-
 @loader.tds
 class UpdaterMod(loader.Module):
     """Updates itself"""
@@ -39,42 +38,130 @@ class UpdaterMod(loader.Module):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "GIT_ORIGIN_URL",
-                "https://github.com/i9opkas/Heroku_Vamhost",
+                "https://github.com/coddrago/Heroku",
                 lambda: self.strings("origin_cfg_doc"),
                 validator=loader.validators.Link(),
             )
         )
 
+    @loader.command()
+    async def restart(self, message: Message):
+        args = utils.get_args_raw(message)
+        secure_boot = any(trigger in args for trigger in {"--secure-boot", "-sb"})
+        try:
+            if (
+                "-f" in args
+                or not self.inline.init_complete
+                or not await self.inline.form(
+                    message=message,
+                    text=self.strings(
+                        "secure_boot_confirm" if secure_boot else "restart_confirm"
+                    ),
+                    reply_markup=[
+                        {
+                            "text": self.strings("btn_restart"),
+                            "callback": self.inline_restart,
+                            "args": (secure_boot,),
+                        },
+                        {"text": self.strings("cancel"), "action": "close"},
+                    ],
+                )
+            ):
+                raise
+        except Exception:
+            await self.restart_common(message, secure_boot)
+
+    async def inline_restart(self, call: InlineCall, secure_boot: bool = False):
+        await self.restart_common(call, secure_boot=secure_boot)
+
+    async def process_restart_message(self, msg_obj: typing.Union[InlineCall, Message]):
+        self.set(
+            "selfupdatemsg",
+            (
+                msg_obj.inline_message_id
+                if hasattr(msg_obj, "inline_message_id")
+                else f"{utils.get_chat_id(msg_obj)}:{msg_obj.id}"
+            ),
+        )
+
+    async def restart_common(
+        self,
+        msg_obj: typing.Union[InlineCall, Message],
+        secure_boot: bool = False,
+    ):
+        if (
+            hasattr(msg_obj, "form")
+            and isinstance(msg_obj.form, dict)
+            and "uid" in msg_obj.form
+            and msg_obj.form["uid"] in self.inline._units
+            and "message" in self.inline._units[msg_obj.form["uid"]]
+        ):
+            message = self.inline._units[msg_obj.form["uid"]]["message"]
+        else:
+            message = msg_obj
+
+        if secure_boot:
+            self._db.set(loader.__name__, "secure_boot", True)
+
+        msg_obj = await utils.answer(
+            msg_obj,
+            self.strings("restarting_caption").format(
+                utils.get_platform_emoji()
+                if self._client.hikka_me.premium
+                and CUSTOM_EMOJIS
+                and isinstance(msg_obj, Message)
+                else "Heroku"
+            ),
+        )
+
+        await self.process_restart_message(msg_obj)
+
+        self.set("restart_ts", time.time())
+
+        await self._db.remote_force_save()
+
+        if "LAVHOST" in os.environ:
+            os.system("lavhost restart")
+            return
+
+        with contextlib.suppress(Exception):
+            await main.hikka.web.stop()
+
+        handler = logging.getLogger().handlers[0]
+        handler.setLevel(logging.CRITICAL)
+
+        for client in self.allclients:
+            if client is not message.client:
+                await client.disconnect()
+
+        await message.client.disconnect()
+        restart()
+
     async def download_common(self):
         try:
-            repo_path = os.path.dirname(utils.get_base_dir())
-            repo = Repo(repo_path)
-
-            # Выполняем команду обновления через git checkout + pull
+            repo = Repo(os.path.dirname(utils.get_base_dir()))
+            origin = repo.remote("origin")
+            
+            # Выполняем checkout и pull
             subprocess.run(
-                ["git", "checkout", "origin/master"],
-                cwd=repo_path,
-                check=True,
+                ["git", "checkout", "origin/master"], 
+                cwd=os.path.dirname(utils.get_base_dir()),
+                check=True
             )
+            
             subprocess.run(
-                ["git", "pull", "origin", "master"],
-                cwd=repo_path,
-                check=True,
+                ["git", "pull", "origin", "master"], 
+                cwd=os.path.dirname(utils.get_base_dir()),
+                check=True
             )
-
-            # Проверяем изменения в requirements.txt
-            new_commit = repo.head.commit
-            for d in new_commit.diff("HEAD~1"):
-                if d.b_path == "requirements.txt":
-                    return True
-            return False
-        except (git.exc.InvalidGitRepositoryError, subprocess.CalledProcessError) as e:
-            logger.error(f"Git update error: {e}")
+            
+            return True  # Возвращаем True после успешного выполнения
+        except Exception as e:
+            logger.exception("Error during git checkout and pull: %s", str(e))
             return False
 
     @staticmethod
     def req_common():
-        """Установка новых зависимостей, если они появились"""
         logger.debug("Installing new requirements...")
         try:
             subprocess.run(
@@ -95,12 +182,44 @@ class UpdaterMod(loader.Module):
         except subprocess.CalledProcessError:
             logger.exception("Req install failed")
 
+    @loader.command()
+    async def update(self, message: Message):
+        try:
+            args = utils.get_args_raw(message)
+            current = utils.get_git_hash()
+            upcoming = next(
+                git.Repo().iter_commits(f"origin/{version.branch}", max_count=1)
+            ).hexsha
+            if (
+                "-f" in args
+                or not self.inline.init_complete
+                or not await self.inline.form(
+                    message=message,
+                    text=(
+                        self.strings("update_confirm").format(
+                            current, current[:8], upcoming, upcoming[:8]
+                        )
+                        if upcoming != current
+                        else self.strings("no_update")
+                    ),
+                    reply_markup=[
+                        {
+                            "text": self.strings("btn_update"),
+                            "callback": self.inline_update,
+                        },
+                        {"text": self.strings("cancel"), "action": "close"},
+                    ],
+                )
+            ):
+                raise
+        except Exception:
+            await self.inline_update(message)
+
     async def inline_update(
         self,
         msg_obj: typing.Union[InlineCall, Message],
         hard: bool = False,
     ):
-        """Основной процесс обновления"""
         if hard:
             os.system(f"cd {utils.get_base_dir()} && cd .. && git reset --hard HEAD")
 
@@ -108,7 +227,16 @@ class UpdaterMod(loader.Module):
             if "LAVHOST" in os.environ:
                 msg_obj = await utils.answer(
                     msg_obj,
-                    self.strings("lavhost_update").format("lavHost"),
+                    self.strings("lavhost_update").format(
+                        "</b><emoji document_id=5192756799647785066>✌️</emoji><emoji"
+                        " document_id=5193117564015747203>✌️</emoji><emoji"
+                        " document_id=5195050806105087456>✌️</emoji><emoji"
+                        " document_id=5195457642587233944>✌️</emoji><b>"
+                        if self._client.hikka_me.premium
+                        and CUSTOM_EMOJIS
+                        and isinstance(msg_obj, Message)
+                        else "lavHost"
+                    ),
                 )
                 await self.process_restart_message(msg_obj)
                 os.system("lavhost update")
@@ -132,3 +260,78 @@ class UpdaterMod(loader.Module):
                 return
 
             logger.critical("Got update loop. Update manually via .terminal")
+
+    @loader.command()
+    async def source(self, message: Message):
+        await utils.answer(
+            message,
+            self.strings("source").format(self.config["GIT_ORIGIN_URL"]),
+        )
+
+    async def client_ready(self):
+        if self.get("selfupdatemsg") is not None:
+            try:
+                await self.update_complete()
+            except Exception:
+                logger.exception("Failed to complete update!")
+
+        if self.get("do_not_create", False):
+            return
+
+        try:
+            await self._add_folder()
+        except Exception:
+            logger.exception("Failed to add folder!")
+
+        self.set("do_not_create", True)
+
+    async def _add_folder(self):
+        folders = await self._client(GetDialogFiltersRequest())
+
+        if any(getattr(folder, "title", None) == "hikka" for folder in folders):
+            return
+
+        try:
+            folder_id = (
+                max(
+                    (folder for folder in folders if hasattr(folder, "id")),
+                    key=lambda x: x.id,
+                ).id
+                + 1
+            )
+        except ValueError:
+            folder_id = 2
+
+        try:
+            await self._client(
+                UpdateDialogFilterRequest(
+                    folder_id,
+                    DialogFilter(
+                        folder_id,
+                        title="hikka",
+                        pinned_peers=(
+                            [
+                                await self._client.get_input_entity(
+                                    self._client.loader.inline.bot_id
+                                )
+                            ]
+                            if self._client.loader.inline.init_complete
+                            else []
+                        ),
+                        include_peers=[
+                            await self._client.get_input_entity(dialog.entity)
+                            async for dialog in self._client.iter_dialogs(
+                                None,
+                                ignore_migrated=True,
+                            )
+                            if dialog.name
+                            in {
+                                "heroku-logs",
+                                "bot-log",
+                            }
+                        ],
+                    ),
+                )
+            )
+        except Exception:
+            logger.exception("Failed to create dialog filter!")
