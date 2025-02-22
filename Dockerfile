@@ -28,7 +28,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl libcairo2 git ffmpeg libmagic1 \
     libavcodec-dev libavutil-dev libavformat-dev \
-    libswscale-dev libavdevice-dev neofetch wkhtmltopdf gcc python3-dev nftables && \
+    libswscale-dev libavdevice-dev neofetch wkhtmltopdf gcc python3-dev && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* && \
     apt-get clean
 
@@ -47,14 +47,9 @@ ENV DOCKER=true \
 # Копируем файлы из builder-стадии
 COPY --from=builder /Hikka /Hikka
 
-# Копируем скрипты
-COPY netmonitor.sh /netmonitor.sh
-RUN chmod +x /netmonitor.sh
+# Копируем скрипт
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-# Копируем конфиг для nftables
-COPY nftables.conf /etc/nftables.conf
 
 # Указываем рабочую директорию
 WORKDIR /Hikka
@@ -62,5 +57,5 @@ WORKDIR /Hikka
 # Открываем порт
 EXPOSE 8080
 
-# Запускаем скрипты и приложение
-ENTRYPOINT ["/bin/sh", "-c", "/netmonitor.sh & exec /entrypoint.sh && exec python -m hikka"]
+# Запускаем скрипт и приложение
+ENTRYPOINT ["/bin/sh", "-c", "/entrypoint.sh && exec python -m hikka"]
