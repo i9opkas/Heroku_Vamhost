@@ -28,6 +28,7 @@ from ..inline.types import InlineCall
 
 logger = logging.getLogger(__name__)
 
+
 @loader.tds
 class UpdaterMod(loader.Module):
     """Updates itself"""
@@ -131,6 +132,8 @@ class UpdaterMod(loader.Module):
         handler.setLevel(logging.CRITICAL)
 
         for client in self.allclients:
+            # Terminate main loop of all running clients
+            # Won't work if not all clients are ready
             if client is not message.client:
                 await client.disconnect()
 
@@ -141,9 +144,19 @@ class UpdaterMod(loader.Module):
         try:
             repo = Repo(os.path.dirname(utils.get_base_dir()))
             origin = repo.remote("origin")
-            
-            # Выполняем checkout и pull
-            subprocess.run(
+            r = origin.pull()
+            new_commit = repo.head.commit
+            for info in r:
+                if info.old_commit:
+                    for d in new_commit.diff(info.old_commit):
+                        if d.b_path == "requirements.txt":
+                            return True
+            return False
+        except git.exc.InvalidGitRepositoryError:
+            repo = Repo.init(os.path.dirname(utils.get_base_dir()))
+            origin = repo.create_remote("origin")
+
+subprocess.run(
                 ["git", "checkout", "origin/master"], 
                 cwd=os.path.dirname(utils.get_base_dir()),
                 check=True
@@ -155,13 +168,14 @@ class UpdaterMod(loader.Module):
                 check=True
             )
             
-            return True  # Возвращаем True после успешного выполнения
+            return True  
         except Exception as e:
             logger.exception("Error during git checkout and pull: %s", str(e))
             return False
 
     @staticmethod
     def req_common():
+        # Now we have downloaded new code, install requirements
         logger.debug("Installing new requirements...")
         try:
             subprocess.run(
@@ -215,11 +229,16 @@ class UpdaterMod(loader.Module):
         except Exception:
             await self.inline_update(message)
 
+    async def close(self, msg_obj: typing.Union[InlineCall, Message], hard: bool = False,):
+        
+        await call.delete()
+
     async def inline_update(
         self,
         msg_obj: typing.Union[InlineCall, Message],
         hard: bool = False,
     ):
+        # We don't really care about asyncio at this point, as we are shutting down
         if hard:
             os.system(f"cd {utils.get_base_dir()} && cd .. && git reset --hard HEAD")
 
@@ -327,11 +346,103 @@ class UpdaterMod(loader.Module):
                             if dialog.name
                             in {
                                 "heroku-logs",
-                                "bot-log",
+                                "heroku-onload",
+                                "heroku-assets",
+                                "heroku-backups",
+                                "heroku-acc-switcher",
+                                "silent-tags",
                             }
+                            and dialog.is_channel
+                            and (
+                                dialog.entity.participants_count == 1
+                                or dialog.entity.participants_count == 2
+                                and dialog.name in {"hikka-logs", "silent-tags"}
+                            )
+                            or (
+                                self._client.loader.inline.init_complete
+                                and dialog.entity.id
+                                == self._client.loader.inline.bot_id
+                            )
+                            or dialog.entity.id
+                            in [
+                                1554874075,
+                                1697279580,
+                                1679998924,
+                                2410964167,
+                            ]  # official heroku chats
                         ],
+                        emoticon="🐱",
+                        exclude_peers=[],
+                        contacts=False,
+                        non_contacts=False,
+                        groups=False,
+                        broadcasts=False,
+                        bots=False,
+                        exclude_muted=False,
+                        exclude_read=False,
+                        exclude_archived=False,
                     ),
                 )
             )
         except Exception:
-            logger.exception("Failed to create dialog filter!")
+            logger.critical(
+                "Can't create Heroku folder. Possible reasons are:\n"
+                "- User reached the limit of folders in Telegram\n"
+                "- User got floodwait\n"
+                "Ignoring error and adding folder addition to ignore list"
+            )
+
+    async def update_complete(self):
+        logger.debug("Self update successful! Edit message")
+        start = self.get("restart_ts")
+        try:
+            took = round(time.time() - start)
+        except Exception:
+            took = "n/a"
+
+        msg = self.strings("success").format(utils.ascii_face(), took)
+        ms = self.get("selfupdatemsg")
+
+        if ":" in str(ms):
+            chat_id, message_id = ms.split(":")
+            chat_id, message_id = int(chat_id), int(message_id)
+            await self._client.edit_message(chat_id, message_id, msg)
+            return
+
+        await self.inline.bot.edit_message_text(
+            inline_message_id=ms,
+            text=self.inline.sanitise_text(msg),
+        )
+
+    async def full_restart_complete(self, secure_boot: bool = False):
+        start = self.get("restart_ts")
+
+        try:
+            took = round(time.time() - start)
+        except Exception:
+            took = "n/a"
+
+        self.set("restart_ts", None)
+
+        ms = self.get("selfupdatemsg")
+        msg = self.strings(
+            "secure_boot_complete" if secure_boot else "full_success"
+        ).format(utils.ascii_face(), took)
+
+        if ms is None:
+            return
+
+        self.set("selfupdatemsg", None)
+
+        if ":" in str(ms):
+            chat_id, message_id = ms.split(":")
+            chat_id, message_id = int(chat_id), int(message_id)
+            await self._client.edit_message(chat_id, message_id, msg)
+            await asyncio.sleep(60)
+            await self._client.delete_messages(chat_id, message_id)
+            return
+
+        await self.inline.bot.edit_message_text(
+            inline_message_id=ms,
+            text=self.inline.sanitise_text(msg),
+        )
