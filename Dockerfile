@@ -63,4 +63,4 @@ WORKDIR /Hikka
 EXPOSE 8080
 
 # Запускаем скрипты и приложение
-ENTRYPOINT ["/bin/sh", "-c", "/netmonitor.sh & /entrypoint.sh && exec python -m hikka"]
+ENTRYPOINT ["/bin/sh", "-c", "/entrypoint.sh && exec python -m hikka"]
