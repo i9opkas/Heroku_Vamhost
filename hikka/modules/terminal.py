@@ -339,10 +339,15 @@ async def run_command(
     editor: typing.Optional[MessageEditor] = None,
 ):
     if any(blocked_cmd in cmd for blocked_cmd in self.BLOCKED_COMMANDS):
-        text = f"<code>{utils.escape_html(cmd)}</code>\n"
-        text += "<b>This command is blocked!</b>"
-        await utils.answer(message, text)
+        stderr_text = f"<code>{utils.escape_html(cmd)}</code>\n<b>Эта команда заблокирована!</b>"
+        
+        if editor is None:
+            editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
+
+        await editor.update_stderr(stderr_text)
+        await editor.cmd_ended(1)  
         return
+        
         
         if len(cmd.split(" ")) > 1 and cmd.split(" ")[0] == "sudo":
             needsswitch = True
