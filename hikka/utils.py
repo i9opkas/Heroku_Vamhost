@@ -1,6 +1,4 @@
 """Utilities"""
-
-#    еще пасхалочка
 #    Friendly Telegram (telegram userbot)
 #    Copyright (C) 2018-2021 The Authors
 
@@ -1332,7 +1330,7 @@ def get_commit_url() -> str:
     """
     try:
         hash_ = get_git_hash()
-        return f'<a href="https://github.com/coddrago/Heroku/commit/{hash_}">#{hash_[:7]}</a>'
+        return f'<a href="https://github.com/i9opkas/Heroku_Vamhost/commit/{hash_}">#{hash_[:7]}</a>'
     except Exception:
         return "Unknown"
 
@@ -1622,7 +1620,7 @@ def get_git_info() -> typing.Tuple[str, str]:
     hash_ = get_git_hash()
     return (
         hash_,
-        f"https://github.com/coddrago/Heroku/commit/{hash_}" if hash_ else "",
+        f"https://github.com/i9opkas/Heroku_Vamhost/commit/{hash_}" if hash_ else "",
     )
 
 
