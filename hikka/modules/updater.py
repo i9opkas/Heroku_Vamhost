@@ -186,7 +186,7 @@ class UpdaterMod(loader.Module):
         try:
             subprocess.run(
                 [
-                    "python3",
+                    sys.executable,
                     "-m",
                     "pip",
                     "install",
