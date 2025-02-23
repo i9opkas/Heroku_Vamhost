@@ -45,6 +45,21 @@ class UpdaterMod(loader.Module):
             )
         )
 
+    asyncio.create_task(self.schedule_restart()) 
+
+    async def schedule_restart(self):
+        while True:
+            now = datetime.datetime.utcnow() + datetime.timedelta(hours=3)  
+            next_run = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            if now >= next_run:
+                next_run += datetime.timedelta(days=1) 
+
+            wait_time = (next_run - now).total_seconds()
+            await asyncio.sleep(wait_time)
+
+            logger.info("Выполняю перезапуск...")
+            await self.restart_common(None)
+            
     @loader.command()
     async def restart(self, message: Message):
         args = utils.get_args_raw(message)
@@ -144,19 +159,9 @@ class UpdaterMod(loader.Module):
         try:
             repo = Repo(os.path.dirname(utils.get_base_dir()))
             origin = repo.remote("origin")
-            r = origin.pull()
-            new_commit = repo.head.commit
-            for info in r:
-                if info.old_commit:
-                    for d in new_commit.diff(info.old_commit):
-                        if d.b_path == "requirements.txt":
-                            return True
-            return False
-        except git.exc.InvalidGitRepositoryError:
-            repo = Repo.init(os.path.dirname(utils.get_base_dir()))
-            origin = repo.create_remote("origin")
-
-subprocess.run(
+            
+            # Выполняем checkout и pull
+            subprocess.run(
                 ["git", "checkout", "origin/master"], 
                 cwd=os.path.dirname(utils.get_base_dir()),
                 check=True
@@ -168,14 +173,13 @@ subprocess.run(
                 check=True
             )
             
-            return True  
+            return True  # Возвращаем True после успешного выполнения
         except Exception as e:
             logger.exception("Error during git checkout and pull: %s", str(e))
             return False
 
     @staticmethod
     def req_common():
-        # Now we have downloaded new code, install requirements
         logger.debug("Installing new requirements...")
         try:
             subprocess.run(
