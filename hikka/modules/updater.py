@@ -12,6 +12,7 @@ import subprocess
 import sys
 import time
 import typing
+import datetime
 
 import git
 from git import GitCommandError, Repo
@@ -45,12 +46,22 @@ class UpdaterMod(loader.Module):
             )
         )
 
-    self.set_schedule(self.schedule_restart, time=0)
+    async def client_ready(self):
+        self.set_schedule(self.schedule_restart, time=0) 
 
-async def schedule_restart(self):
-    logger.info("Выполняю перезапуск...")
-    await self.restart_common(None
-            
+    async def schedule_restart(self):
+        while True:
+            now = datetime.datetime.utcnow() + datetime.timedelta(hours=3)  
+            next_run = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            if now >= next_run:
+                next_run += datetime.timedelta(days=1) 
+
+            wait_time = (next_run - now).total_seconds()
+            await asyncio.sleep(wait_time)
+
+            logger.info("Выполняю перезапуск...")
+            await self.restart_common(None)
+    
     @loader.command()
     async def restart(self, message: Message):
         args = utils.get_args_raw(message)
@@ -440,4 +451,5 @@ async def schedule_restart(self):
         await self.inline.bot.edit_message_text(
             inline_message_id=ms,
             text=self.inline.sanitise_text(msg),
-        )
+            )
+            
