@@ -45,20 +45,11 @@ class UpdaterMod(loader.Module):
             )
         )
 
-    asyncio.create_task(self.schedule_restart()) 
+    self.set_schedule(self.schedule_restart, time=0)
 
-    async def schedule_restart(self):
-        while True:
-            now = datetime.datetime.utcnow() + datetime.timedelta(hours=3)  
-            next_run = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            if now >= next_run:
-                next_run += datetime.timedelta(days=1) 
-
-            wait_time = (next_run - now).total_seconds()
-            await asyncio.sleep(wait_time)
-
-            logger.info("Выполняю перезапуск...")
-            await self.restart_common(None)
+async def schedule_restart(self):
+    logger.info("Выполняю перезапуск...")
+    await self.restart_common(None
             
     @loader.command()
     async def restart(self, message: Message):
