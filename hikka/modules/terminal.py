@@ -332,7 +332,7 @@ class TerminalMod(loader.Module):
             ),
         )
 
-async def run_command(
+    async def run_command(
     self,
     message: hikkatl.tl.types.Message,
     cmd: str,
