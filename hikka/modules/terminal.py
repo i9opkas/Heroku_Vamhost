@@ -337,8 +337,11 @@ class TerminalMod(loader.Module):
         cmd: str,
         editor: typing.Optional[MessageEditor] = None,
     ):
-        if any(blocked_cmd in cmd for blocked_cmd in self.BLOCKED_COMMANDS):
-            await utils.answer(message, "it's command blocked.")
+        async def redraw(self):
+        if any(blocked_cmd in self.command for blocked_cmd in self.BLOCKED_COMMANDS):
+            text = f"<code>{utils.escape_html(self.command)}</code>\n"
+            text += "<b> Эта команда заблокирована!</b>" 
+            await utils.answer(self.message, text)
             return
 
         if len(cmd.split(" ")) > 1 and cmd.split(" ")[0] == "sudo":
