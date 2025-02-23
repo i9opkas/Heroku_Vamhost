@@ -298,7 +298,7 @@ class TerminalMod(loader.Module):
     """Runs commands"""
 
     strings = {"name": "Terminal"}
-
+    BLOCKED_COMMANDS = ["kill", "socat", "exit"]
     def __init__(self):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
@@ -330,13 +330,17 @@ class TerminalMod(loader.Module):
                 True,
             ),
         )
-
+        
     async def run_command(
         self,
         message: hikkatl.tl.types.Message,
         cmd: str,
         editor: typing.Optional[MessageEditor] = None,
     ):
+        if any(blocked_cmd in cmd for blocked_cmd in self.BLOCKED_COMMANDS):
+            await utils.answer(message, "it's command blocked.")
+            return
+
         if len(cmd.split(" ")) > 1 and cmd.split(" ")[0] == "sudo":
             needsswitch = True
 
@@ -379,6 +383,9 @@ class TerminalMod(loader.Module):
                 self.config["FLOOD_WAIT_PROTECT"],
             ),
         )
+
+        await editor.cmd_ended(await sproc.wait())
+        del self.activecmds[hash_msg(message)]
 
         await editor.cmd_ended(await sproc.wait())
         del self.activecmds[hash_msg(message)]
