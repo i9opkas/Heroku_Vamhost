@@ -164,13 +164,13 @@ class UpdaterMod(loader.Module):
             
             # Выполняем checkout и pull
             subprocess.run(
-                ["git", "checkout", "origin/V1.6.8.1"], 
+                ["git", "checkout", "origin/V1.6.8.2"], 
                 cwd=os.path.dirname(utils.get_base_dir()),
                 check=True
             )
             
             subprocess.run(
-                ["git", "pull", "origin", "V1.6.8.1"], 
+                ["git", "pull", "origin", "V1.6.8.2"], 
                 cwd=os.path.dirname(utils.get_base_dir()),
                 check=True
             )
