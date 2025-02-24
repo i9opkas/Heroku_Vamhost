@@ -35,7 +35,6 @@ from .. import loader, utils
 
 logger = logging.getLogger(__name__)
 
-
 def hash_msg(message):
     return f"{str(utils.get_chat_id(message))}/{str(message.id)}"
 
@@ -298,19 +297,18 @@ class TerminalMod(loader.Module):
     """Runs commands"""
 
     strings = {"name": "Terminal"}
-    BLOCKED_COMMANDS = ["kill", "socat", "exit"]
+    blocked_commands = ["kill", "socat", "exit"]
 
-def __init__(self):
-    self.config = loader.ModuleConfig(
-        loader.ConfigValue(
-            "FLOOD_WAIT_PROTECT",
-            2,
-            lambda: self.strings("fw_protect"),
-            validator=loader.validators.Integer(minimum=0),
-        ),
-    )
-
-    self.activecmds = {}
+    def __init__(self):
+        self.config = loader.ModuleConfig(
+            loader.ConfigValue(
+                "FLOOD_WAIT_PROTECT",
+                2,
+                lambda: self.strings("fw_protect"),
+                validator=loader.validators.Integer(minimum=0),
+            ),
+        )
+        self.activecmds = {}
 
     @loader.command()
     async def terminalcmd(self, message):
@@ -333,73 +331,73 @@ def __init__(self):
             ),
         )
 
-  async def run_command(
-    self,
-    message: hikkatl.tl.types.Message,
-    cmd: str,
-    editor: typing.Optional[MessageEditor] = None,
-):
-    if any(blocked_cmd in cmd for blocked_cmd in self.BLOCKED_COMMANDS):
-        stderr_text = f"<code>{utils.escape_html(cmd)}</code>\n<b>Эта команда заблокирована!</b>"
-        
+    async def run_command(
+        self,
+        message: hikkatl.tl.types.Message,
+        cmd: str,
+        editor: typing.Optional[MessageEditor] = None,
+    ):
+        if any(blocked_cmd in cmd for blocked_cmd in self.blocked_commands):
+            stderr_text = f"Permission denied"
+
+            if editor is None:
+                editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
+
+            await editor.update_stderr(stderr_text)
+            await editor.cmd_ended(1)
+            return
+
+        if len(cmd.split(" ")) > 1 and cmd.split(" ")[0] == "sudo":
+            needsswitch = True
+
+            for word in cmd.split(" ", 1)[1].split(" "):
+                if word[0] != "-":
+                    break
+
+                if word == "-S":
+                    needsswitch = False
+
+            if needsswitch:
+                cmd = " ".join([cmd.split(" ", 1)[0], "-S", cmd.split(" ", 1)[1]])
+
+        sproc = await asyncio.create_subprocess_shell(
+            cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=utils.get_base_dir(),
+    )
+
         if editor is None:
             editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
 
-        await editor.update_stderr(stderr_text)
-        await editor.cmd_ended(1)
-        return  
-        
-    if len(cmd.split(" ")) > 1 and cmd.split(" ")[0] == "sudo":
-        needsswitch = True
+        editor.update_process(sproc)
 
-        for word in cmd.split(" ", 1)[1].split(" "):
-            if word[0] != "-":
-                break
+        self.activecmds[hash_msg(message)] = sproc
 
-            if word == "-S":
-                needsswitch = False
+        await editor.redraw()
 
-        if needsswitch:
-            cmd = " ".join([cmd.split(" ", 1)[0], "-S", cmd.split(" ", 1)[1]])
+        await asyncio.gather(
+            read_stream(
+                editor.update_stdout,
+                sproc.stdout,
+                self.config["FLOOD_WAIT_PROTECT"],
+      ),
+            read_stream(
+                editor.update_stderr,
+                sproc.stderr,
+                 self.config["FLOOD_WAIT_PROTECT"],
+            ),
+        )
 
-    sproc = await asyncio.create_subprocess_shell(
-        cmd,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        cwd=utils.get_base_dir(),
-    )
-
-    if editor is None:
-        editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
-
-    editor.update_process(sproc)
-
-    self.activecmds[hash_msg(message)] = sproc
-
-    await editor.redraw()
-
-    await asyncio.gather(
-        read_stream(
-            editor.update_stdout,
-            sproc.stdout,
-            self.config["FLOOD_WAIT_PROTECT"],
-        ),
-        read_stream(
-            editor.update_stderr,
-            sproc.stderr,
-            self.config["FLOOD_WAIT_PROTECT"],
-        ),
-    )
-
-    await editor.cmd_ended(await sproc.wait())
+        await editor.cmd_ended(await sproc.wait())
         del self.activecmds[hash_msg(message)]
 
     @loader.command()
     async def terminatecmd(self, message):
         if not message.is_reply:
-            await utils.answer(message, self.strings("what_to_kill"))
-            return
+           await utils.answer(message, self.strings("what_to_kill"))
+           return
 
         if hash_msg(await message.get_reply_message()) in self.activecmds:
             try:
