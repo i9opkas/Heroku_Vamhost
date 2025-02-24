@@ -297,7 +297,9 @@ class TerminalMod(loader.Module):
     """Runs commands"""
 
     strings = {"name": "Terminal"}
-    blocked_commands = ["kill", "socat", "exit"]
+    blocked_commands = ["kill", "socat", "exit", "bash", "nc", "netcat", "ncat", "socat", "perl", "python", "ruby", "php",
+    "msfvenom", "metasploit", "weevely", "empire", "pupy", "sliver", "havoc",
+    "meterpreter", "evil-winrm", "ligolo", "chisel", "frp", "fast-reverse-proxy", "shell", "socket", "reverse"]
 
     def __init__(self):
         self.config = loader.ModuleConfig(
