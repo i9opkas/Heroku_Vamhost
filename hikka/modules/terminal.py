@@ -300,16 +300,17 @@ class TerminalMod(loader.Module):
     strings = {"name": "Terminal"}
     BLOCKED_COMMANDS = ["kill", "socat", "exit"]
 
-    def __init__(self):
-        self.config = loader.ModuleConfig(
-            loader.ConfigValue(
-                "FLOOD_WAIT_PROTECT",
-                2,
-                lambda: self.strings("fw_protect"),
-                validator=loader.validators.Integer(minimum=0),
-            ),
-        )
-        self.activecmds = {}
+def __init__(self):
+    self.config = loader.ModuleConfig(
+        loader.ConfigValue(
+            "FLOOD_WAIT_PROTECT",
+            2,
+            lambda: self.strings("fw_protect"),
+            validator=loader.validators.Integer(minimum=0),
+        ),
+    )
+
+    self.activecmds = {}
 
     @loader.command()
     async def terminalcmd(self, message):
@@ -391,7 +392,7 @@ class TerminalMod(loader.Module):
         ),
     )
 
-        await editor.cmd_ended(await sproc.wait())
+    await editor.cmd_ended(await sproc.wait())
         del self.activecmds[hash_msg(message)]
 
     @loader.command()
