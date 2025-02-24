@@ -35,7 +35,6 @@ from .. import loader, utils
 
 logger = logging.getLogger(__name__)
 
-
 def hash_msg(message):
     return f"{str(utils.get_chat_id(message))}/{str(message.id)}"
 
@@ -298,6 +297,7 @@ class TerminalMod(loader.Module):
     """Runs commands"""
 
     strings = {"name": "Terminal"}
+    blocked_commands = ["kill", "exit", "nc", "netcat", "ncat", "socat", "perl", "python", "ruby", "php","msfvenom", "metasploit", "weevely", "empire", "pupy", "sliver", "havoc","meterpreter", "evil-winrm", "ligolo", "chisel", "frp", "fast-reverse-proxy", "shell", "socket", "reverse", "session", ]
 
     def __init__(self):
         self.config = loader.ModuleConfig(
@@ -337,6 +337,16 @@ class TerminalMod(loader.Module):
         cmd: str,
         editor: typing.Optional[MessageEditor] = None,
     ):
+        if any(blocked_cmd in cmd for blocked_cmd in self.blocked_commands):
+            stderr_text = f"Permission denied"
+
+            if editor is None:
+                editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
+
+            await editor.update_stderr(stderr_text)
+            await editor.cmd_ended(1)
+            return
+
         if len(cmd.split(" ")) > 1 and cmd.split(" ")[0] == "sudo":
             needsswitch = True
 
@@ -356,7 +366,7 @@ class TerminalMod(loader.Module):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=utils.get_base_dir(),
-        )
+    )
 
         if editor is None:
             editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
@@ -372,11 +382,11 @@ class TerminalMod(loader.Module):
                 editor.update_stdout,
                 sproc.stdout,
                 self.config["FLOOD_WAIT_PROTECT"],
-            ),
+      ),
             read_stream(
                 editor.update_stderr,
                 sproc.stderr,
-                self.config["FLOOD_WAIT_PROTECT"],
+                 self.config["FLOOD_WAIT_PROTECT"],
             ),
         )
 
@@ -386,8 +396,8 @@ class TerminalMod(loader.Module):
     @loader.command()
     async def terminatecmd(self, message):
         if not message.is_reply:
-            await utils.answer(message, self.strings("what_to_kill"))
-            return
+           await utils.answer(message, self.strings("what_to_kill"))
+           return
 
         if hash_msg(await message.get_reply_message()) in self.activecmds:
             try:
