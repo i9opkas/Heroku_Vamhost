@@ -235,7 +235,7 @@ class UpdaterMod(loader.Module):
             try:
                 await self._add_folder()
             except Exception:
-                logger.exception("Failed to create Hikka folder")
+                logger.exception("Failed to create Heroku folder")
             self.set("do_not_create", True)
 
         if self.config["AUTO_RESTART"]:
