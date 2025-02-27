@@ -147,9 +147,9 @@ class Evaluator(loader.Module):
     strings = {
         "name": "Evaluator",
         "compiling": "<b>Compiling...</b>",
-        "no_compiler": "<emoji document_id={}>❌</emoji> <b>{} is not installed or unavailable</b>",
+        "no_compiler": "<b>{} is not installed or unavailable</b>",
         "eval": "💾 Код вернул:\n<pre><code class=\"language-{}\">{}</code></pre>\n⏳ Выполнен за {} секунд",
-        "err": "💾 Код вернул:\n<emoji document_id=5440381017384822513>🚫</emoji> Ошибка:\n<pre><code class=\"language-{}\">{}</code></pre>\n⏳ Выполнен за {} секунд",
+        "err": "💾 Код вернул:\n<b>Ошибка:</b>\n<pre><code class=\"language-{}\">{}</code></pre>\n⏳ Выполнен за {} секунд",
     }
 
     blocked_commands = [
@@ -182,7 +182,7 @@ class Evaluator(loader.Module):
         except Exception:
             item = HikkaException.from_exc_info(*sys.exc_info())
             stop_time = time.perf_counter()
-            error_text = self.censor("\n".join(item.full_stack.splitlines()[:-1]) + "\n\n🚫 " + item.full_stack.splitlines()[-1])
+            error_text = self.censor("\n".join(item.full_stack.splitlines()[:-1]) + "\n\n" + item.full_stack.splitlines()[-1])
             await utils.answer(
                 message,
                 f"<blockquote>💻 Код:\n<pre><code class=\"language-python\">{utils.escape_html(code)}</code></pre>\n{self.strings('err').format('python', error_text, round(stop_time - start_time, 5))}</blockquote>"
@@ -215,7 +215,7 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('4986046904228905931' if c else '4985844035743646190', 'C (gcc)' if c else 'C++ (g++)')}</blockquote>",
+                f"<blockquote>{self.strings('no_compiler').format('C (gcc)' if c else 'C++ (g++)')}</blockquote>",
             )
             return
 
@@ -284,7 +284,7 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('4985643941807260310', 'Node.js')}</blockquote>",
+                f"<blockquote>{self.strings('no_compiler').format('Node.js')}</blockquote>",
             )
             return
 
@@ -337,7 +337,7 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('4985815079074136919', 'PHP')}</blockquote>",
+                f"<blockquote>{self.strings('no_compiler').format('PHP')}</blockquote>",
             )
             return
 
@@ -370,9 +370,14 @@ class Evaluator(loader.Module):
 
         stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
+            result_text = self.strings('err' if error else 'eval').format(
+                'php',
+                utils.escape_html(result),
+                round(stop_time - start_time, 5)
+            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-php\">{utils.escape_html(code)}</code></pre>\n{self.strings('err' if error else 'eval').format('php', utils.escape_html(result), round(stop_time - start_time, 5))}</blockquote>"
+                f"<blockquote>💻 Код:\n<pre><code class=\"language-php\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
             )
 
     @loader.command()
@@ -385,7 +390,7 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('4985760855112024628', 'Ruby')}</blockquote>",
+                f"<blockquote>{self.strings('no_compiler').format('Ruby')}</blockquote>",
             )
             return
 
@@ -418,9 +423,14 @@ class Evaluator(loader.Module):
 
         stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
+            result_text = self.strings('err' if error else 'eval').format(
+                'ruby',
+                utils.escape_html(result),
+                round(stop_time - start_time, 5)
+            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-ruby\">{utils.escape_html(code)}</code></pre>\n{self.strings('err' if error else 'eval').format('ruby', utils.escape_html(result), round(stop_time - start_time, 5))}</blockquote>"
+                f"<blockquote>💻 Код:\n<pre><code class=\"language-ruby\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
             )
 
     @loader.command()
@@ -457,9 +467,14 @@ class Evaluator(loader.Module):
 
         stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
+            result_text = self.strings('err' if error else 'eval').format(
+                'brainfuck',
+                utils.escape_html(result),
+                round(stop_time - start_time, 5)
+            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-brainfuck\">{utils.escape_html(code)}</code></pre>\n{self.strings('err' if error else 'eval').format('brainfuck', utils.escape_html(result), round(stop_time - start_time, 5))}</blockquote>"
+                f"<blockquote>💻 Код:\n<pre><code class=\"language-brainfuck\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
             )
 
     def censor(self, ret: str) -> str:
@@ -536,4 +551,4 @@ class Evaluator(loader.Module):
                     ]
                 )
             ),
-                }
+                    }
