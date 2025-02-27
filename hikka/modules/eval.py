@@ -148,8 +148,9 @@ class Evaluator(loader.Module):
         "name": "Evaluator",
         "compiling": "<b>Compiling...</b>",
         "no_compiler": "<b>{} is not installed or unavailable</b>",
-        "eval": "💾 Код вернул:\n<pre><code class=\"language-{}\">{}</code></pre>\n⏳ Выполнен за {} секунд",
-        "err": "💾 Код вернул:\n<b>Ошибка:</b>\n<pre><code class=\"language-{}\">{}</code></pre>\n⏳ Выполнен за {} секунд",
+        "eval": "<b>Code:</b> <code>{}</code>\n<b>Result:</b> <code>{}</code>",
+        "err": "<b>Code:</b> <code>{}</code>\n<b>Error:</b> <code>{}</code>",
+        "blocked": "<b>Code:</b> <code>{}</code>\n<b>Blocked:</b> Command blocked for security reasons"
     }
 
     blocked_commands = [
@@ -163,13 +164,11 @@ class Evaluator(loader.Module):
     @loader.command(alias="eval")
     async def e(self, message: Message):
         code = utils.get_args_raw(message)
-        start_time = time.perf_counter()
 
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
-            stop_time = time.perf_counter()
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-python\">{utils.escape_html(code)}</code></pre>\n💾 Код вернул:\n🚫 Команда заблокирована из соображений безопасности\n⏳ Выполнен за {round(stop_time - start_time, 5)} секунд</blockquote>"
+                f"<blockquote>{self.strings('blocked').format(utils.escape_html(code))}</blockquote>"
             )
             return
 
@@ -181,11 +180,10 @@ class Evaluator(loader.Module):
             )
         except Exception:
             item = HikkaException.from_exc_info(*sys.exc_info())
-            stop_time = time.perf_counter()
             error_text = self.censor("\n".join(item.full_stack.splitlines()[:-1]) + "\n\n" + item.full_stack.splitlines()[-1])
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-python\">{utils.escape_html(code)}</code></pre>\n{self.strings('err').format('python', error_text, round(stop_time - start_time, 5))}</blockquote>"
+                f"<blockquote>{self.strings('err').format(utils.escape_html(code), error_text)}</blockquote>"
             )
             return
 
@@ -193,16 +191,10 @@ class Evaluator(loader.Module):
             with contextlib.suppress(Exception):
                 result = str(result.stringify())
 
-        stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
-            result_text = self.strings('eval').format(
-                'python',
-                utils.escape_html(self.censor(str(result))),
-                round(stop_time - start_time, 5)
-            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-python\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
+                f"<blockquote>{self.strings('eval').format(utils.escape_html(code), utils.escape_html(self.censor(str(result))))}</blockquote>"
             )
 
     @loader.command()
@@ -215,18 +207,16 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('C (gcc)' if c else 'C++ (g++)')}</blockquote>",
+                f"<blockquote>{self.strings('no_compiler').format('C (gcc)' if c else 'C++ (g++)')}</blockquote>"
             )
             return
 
         code = utils.get_args_raw(message)
-        start_time = time.perf_counter()
 
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
-            stop_time = time.perf_counter()
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-{('c' if c else 'cpp')}\">{utils.escape_html(code)}</code></pre>\n💾 Код вернул:\n🚫 Команда заблокирована из соображений безопасности\n⏳ Выполнен за {round(stop_time - start_time, 5)} секунд</blockquote>"
+                f"<blockquote>{self.strings('blocked').format(utils.escape_html(code))}</blockquote>"
             )
             return
 
@@ -258,16 +248,10 @@ class Evaluator(loader.Module):
                     result = e.output.decode()
                     error = True
 
-        stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
-            result_text = self.strings('err' if error else 'eval').format(
-                'c' if c else 'cpp',
-                utils.escape_html(result),
-                round(stop_time - start_time, 5)
-            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-{('c' if c else 'cpp')}\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
+                f"<blockquote>{self.strings('err' if error else 'eval').format(utils.escape_html(code), utils.escape_html(result))}</blockquote>"
             )
 
     @loader.command()
@@ -284,18 +268,16 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('Node.js')}</blockquote>",
+                f"<blockquote>{self.strings('no_compiler').format('Node.js')}</blockquote>"
             )
             return
 
         code = utils.get_args_raw(message)
-        start_time = time.perf_counter()
 
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
-            stop_time = time.perf_counter()
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-javascript\">{utils.escape_html(code)}</code></pre>\n💾 Код вернул:\n🚫 Команда заблокирована из соображений безопасности\n⏳ Выполнен за {round(stop_time - start_time, 5)} секунд</blockquote>"
+                f"<blockquote>{self.strings('blocked').format(utils.escape_html(code))}</blockquote>"
             )
             return
 
@@ -315,16 +297,10 @@ class Evaluator(loader.Module):
                 result = e.output.decode()
                 error = True
 
-        stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
-            result_text = self.strings('err' if error else 'eval').format(
-                'javascript',
-                utils.escape_html(result),
-                round(stop_time - start_time, 5)
-            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-javascript\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
+                f"<blockquote>{self.strings('err' if error else 'eval').format(utils.escape_html(code), utils.escape_html(result))}</blockquote>"
             )
 
     @loader.command()
@@ -337,18 +313,16 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('PHP')}</blockquote>",
+                f"<blockquote>{self.strings('no_compiler').format('PHP')}</blockquote>"
             )
             return
 
         code = utils.get_args_raw(message)
-        start_time = time.perf_counter()
 
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
-            stop_time = time.perf_counter()
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-php\">{utils.escape_html(code)}</code></pre>\n💾 Код вернул:\n🚫 Команда заблокирована из соображений безопасности\n⏳ Выполнен за {round(stop_time - start_time, 5)} секунд</blockquote>"
+                f"<blockquote>{self.strings('blocked').format(utils.escape_html(code))}</blockquote>"
             )
             return
 
@@ -368,16 +342,10 @@ class Evaluator(loader.Module):
                 result = e.output.decode()
                 error = True
 
-        stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
-            result_text = self.strings('err' if error else 'eval').format(
-                'php',
-                utils.escape_html(result),
-                round(stop_time - start_time, 5)
-            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-php\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
+                f"<blockquote>{self.strings('err' if error else 'eval').format(utils.escape_html(code), utils.escape_html(result))}</blockquote>"
             )
 
     @loader.command()
@@ -390,18 +358,16 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('Ruby')}</blockquote>",
+                f"<blockquote>{self.strings('no_compiler').format('Ruby')}</blockquote>"
             )
             return
 
         code = utils.get_args_raw(message)
-        start_time = time.perf_counter()
 
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
-            stop_time = time.perf_counter()
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-ruby\">{utils.escape_html(code)}</code></pre>\n💾 Код вернул:\n🚫 Команда заблокирована из соображений безопасности\n⏳ Выполнен за {round(stop_time - start_time, 5)} секунд</blockquote>"
+                f"<blockquote>{self.strings('blocked').format(utils.escape_html(code))}</blockquote>"
             )
             return
 
@@ -421,23 +387,15 @@ class Evaluator(loader.Module):
                 result = e.output.decode()
                 error = True
 
-        stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
-            result_text = self.strings('err' if error else 'eval').format(
-                'ruby',
-                utils.escape_html(result),
-                round(stop_time - start_time, 5)
-            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-ruby\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
+                f"<blockquote>{self.strings('err' if error else 'eval').format(utils.escape_html(code), utils.escape_html(result))}</blockquote>"
             )
 
     @loader.command()
     async def ebf(self, message: Message):
         code = utils.get_args_raw(message)
-        start_time = time.perf_counter()
-
         if "-debug" in code:
             code = code.replace("-debug", "").strip()
             debug = True
@@ -445,10 +403,9 @@ class Evaluator(loader.Module):
             debug = False
 
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
-            stop_time = time.perf_counter()
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-brainfuck\">{utils.escape_html(code)}</code></pre>\n💾 Код вернул:\n🚫 Команда заблокирована из соображений безопасности\n⏳ Выполнен за {round(stop_time - start_time, 5)} секунд</blockquote>"
+                f"<blockquote>{self.strings('blocked').format(utils.escape_html(code))}</blockquote>"
             )
             return
 
@@ -465,16 +422,10 @@ class Evaluator(loader.Module):
         if debug:
             result += "\n\n" + " | ".join(map(str, filter(lambda x: x, bf.data)))
 
-        stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
-            result_text = self.strings('err' if error else 'eval').format(
-                'brainfuck',
-                utils.escape_html(result),
-                round(stop_time - start_time, 5)
-            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-brainfuck\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
+                f"<blockquote>{self.strings('err' if error else 'eval').format(utils.escape_html(code), utils.escape_html(result))}</blockquote>"
             )
 
     def censor(self, ret: str) -> str:
@@ -551,4 +502,4 @@ class Evaluator(loader.Module):
                     ]
                 )
             ),
-                    }
+                       }
