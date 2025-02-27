@@ -260,9 +260,14 @@ class Evaluator(loader.Module):
 
         stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
+            result_text = self.strings('err' if error else 'eval').format(
+                'c' if c else 'cpp',
+                utils.escape_html(result),
+                round(stop_time - start_time, 5)
+            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-{('c' if c else 'cpp')}\">{utils.escape_html(code)}</code></pre>\n{self.strings('err' if error else 'eval').format('error' if error else 'output', utils.escape_html(result), round(stop_time - start_time, 5))}</blockquote>"
+                f"<blockquote>💻 Код:\n<pre><code class=\"language-{('c' if c else 'cpp')}\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
             )
 
     @loader.command()
@@ -312,9 +317,14 @@ class Evaluator(loader.Module):
 
         stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
+            result_text = self.strings('err' if error else 'eval').format(
+                'javascript',
+                utils.escape_html(result),
+                round(stop_time - start_time, 5)
+            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-javascript\">{utils.escape_html(code)}</code></pre>\n{self.strings('err' if error else 'eval').format('javascript', utils.escape_html(result), round(stop_time - start_time, 5))}</blockquote>"
+                f"<blockquote>💻 Код:\n<pre><code class=\"language-javascript\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
             )
 
     @loader.command()
