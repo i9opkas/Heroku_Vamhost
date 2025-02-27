@@ -20,22 +20,29 @@ class Executor(loader.Module):
 
     strings = {
         "name": "Executor",
-
         "no_code": "<emoji document_id=5854929766146118183>❌</emoji> <b>Должно быть </b><code>{}exec [python код]</code>",
-
-        "executing": "<b><emoji document_id=5332600281970517875>🔄</emoji> Выполняю код...</b>"
+        "executing": "<b><emoji document_id=5332600281970517875>🔄</emoji> Выполняю код...</b>",
+        "blocked": "<emoji document_id=5440381017384822513>🚫</emoji> <b>Команда заблокирована из соображений безопасности</b>",
     }
+
+    # Список запрещённых слов/команд, аналогичный TerminalMod
+    blocked_commands = [
+        "kill", "exit", "nc", "netcat", "ncat", "socat", "perl", "ruby", "php",
+        "msfvenom", "metasploit", "weevely", "empire", "pupy", "sliver", "havoc",
+        "meterpreter", "evil-winrm", "ligolo", "chisel", "frp", "fast-reverse-proxy",
+        "shell", "socket", "reverse", "session", "rm", "os.system", "subprocess",
+        "exec", "eval"  # Дополнительно блокирую опасные Python-функции
+    ]
 
     def __init__(self):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "hide_phone",
                 True,
-                lambda: "Скрывает твой номер телефона при выводе",
+                "Скрывает твой номер телефона при выводе",
                 validator=loader.validators.Boolean()
             ),
         )
-
 
     async def client_ready(self, client, db):
         self.db = db
@@ -83,6 +90,10 @@ class Executor(loader.Module):
         if not code:
             return await utils.answer(message, self.strings["no_code"].format(self.get_prefix()))
 
+        # Проверка на наличие запрещённых команд
+        if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
+            return await utils.answer(message, self.strings["blocked"])
+
         await utils.answer(message, self.strings["executing"])
 
         reply = await message.get_reply_message()
@@ -98,7 +109,6 @@ class Executor(loader.Module):
 
         if self.config['hide_phone']:
             t_h = "never gonna give you up"
-
             if result:
                 result = result.replace("+"+me.phone, t_h).replace(me.phone, t_h)
             if res:
