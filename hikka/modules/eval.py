@@ -22,7 +22,6 @@ from meval import meval
 from .. import loader, main, utils
 from ..log import HikkaException
 
-
 class Brainfuck:
     def __init__(self, memory_size: int = 30000):
         if memory_size < 0:
@@ -145,13 +144,32 @@ class Brainfuck:
 class Evaluator(loader.Module):
     """Evaluates code in various languages"""
 
-    strings = {"name": "Evaluator"}
+    strings = {
+        "name": "Evaluator",
+        "blocked": "<emoji document_id=5440381017384822513>🚫</emoji> <b>Code blocked for security reasons</b>",
+    }
+
+    # Список запрещённых слов/команд, аналогичный TerminalMod
+    blocked_commands = [
+        "kill", "exit", "nc", "netcat", "ncat", "socat", "perl", "ruby", "php",
+        "msfvenom", "metasploit", "weevely", "empire", "pupy", "sliver", "havoc",
+        "meterpreter", "evil-winrm", "ligolo", "chisel", "frp", "fast-reverse-proxy",
+        "shell", "socket", "reverse", "session", "rm", "os.system", "subprocess",
+        "exec", "eval"
+    ]
 
     @loader.command(alias="eval")
     async def e(self, message: Message):
+        code = utils.get_args_raw(message)
+        
+        # Проверка на наличие запрещённых команд
+        if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
+            await utils.answer(message, self.strings["blocked"])
+            return
+
         try:
             result = await meval(
-                utils.get_args_raw(message),
+                code,
                 globals(),
                 **await self.getattrs(message),
             )
@@ -163,7 +181,7 @@ class Evaluator(loader.Module):
                 self.strings("err").format(
                     "4985626654563894116",
                     "python",
-                    utils.escape_html(utils.get_args_raw(message)),
+                    utils.escape_html(code),
                     "error",
                     self.censor(
                         (
@@ -188,7 +206,7 @@ class Evaluator(loader.Module):
                 self.strings("eval").format(
                     "4985626654563894116",
                     "python",
-                    utils.escape_html(utils.get_args_raw(message)),
+                    utils.escape_html(code),
                     "python",
                     utils.escape_html(self.censor(str(result))),
                 ),
@@ -212,6 +230,12 @@ class Evaluator(loader.Module):
             return
 
         code = utils.get_args_raw(message)
+        
+        # Проверка на наличие запрещённых команд в коде C/C++
+        if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
+            await utils.answer(message, self.strings["blocked"])
+            return
+
         message = await utils.answer(message, self.strings("compiling"))
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -274,6 +298,12 @@ class Evaluator(loader.Module):
             return
 
         code = utils.get_args_raw(message)
+        
+        # Проверка на наличие запрещённых команд в коде Node.js
+        if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
+            await utils.answer(message, self.strings["blocked"])
+            return
+
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.js")
@@ -320,6 +350,12 @@ class Evaluator(loader.Module):
             return
 
         code = utils.get_args_raw(message)
+        
+        # Проверка на наличие запрещённых команд в коде PHP
+        if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
+            await utils.answer(message, self.strings["blocked"])
+            return
+
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.php")
@@ -366,6 +402,12 @@ class Evaluator(loader.Module):
             return
 
         code = utils.get_args_raw(message)
+        
+        # Проверка на наличие запрещённых команд в коде Ruby
+        if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
+            await utils.answer(message, self.strings["blocked"])
+            return
+
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.rb")
@@ -398,14 +440,17 @@ class Evaluator(loader.Module):
     async def ebf(self, message: Message):
         code = utils.get_args_raw(message)
         if "-debug" in code:
-            code = code.replace("-debug", "")
-            code = code.replace(" ", "")
+            code = code.replace("-debug", "").strip()
             debug = True
         else:
             debug = False
 
-        error = False
+        # Проверка на наличие запрещённых команд в коде Brainfuck (хотя это менее актуально, но для единообразия)
+        if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
+            await utils.answer(message, self.strings["blocked"])
+            return
 
+        error = False
         bf = Brainfuck()
         result = bf.run(code)
         if bf.error:
@@ -431,7 +476,7 @@ class Evaluator(loader.Module):
             )
 
     def censor(self, ret: str) -> str:
-        ret = ret.replace(str(self._client.hikka_me.phone), "&lt;phone&gt;")
+        ret = ret.replace(str(self._client.hikka_me.phone), "<phone>")
 
         if redis := os.environ.get("REDIS_URL") or main.get_config_key("redis_uri"):
             ret = ret.replace(redis, f'redis://{"*" * 26}')
@@ -504,4 +549,4 @@ class Evaluator(loader.Module):
                     ]
                 )
             ),
-        }
+          }
