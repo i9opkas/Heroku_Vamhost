@@ -195,9 +195,14 @@ class Evaluator(loader.Module):
 
         stop_time = time.perf_counter()
         with contextlib.suppress(MessageIdInvalidError):
+            result_text = self.strings('eval').format(
+                'python',
+                utils.escape_html(self.censor(str(result))),
+                round(stop_time - start_time, 5)
+            )
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-python\">{utils.escape_html(code)}</code></pre>\n{self.strings('eval').format('python', utils.escape_html(self.censor(str(result))), round(stop_time - start_time, 5))}</blockquote>"
+                f"<blockquote>💻 Код:\n<pre><code class=\"language-python\">{utils.escape_html(code)}</code></pre>\n{result_text}</blockquote>"
             )
 
     @loader.command()
