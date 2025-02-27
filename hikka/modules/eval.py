@@ -146,7 +146,8 @@ class Evaluator(loader.Module):
     strings = {
         "name": "Evaluator",
         "compiling": "<b>Compiling...</b>",
-        "no_compiler": "<b>{} is not installed or unavailable</b>",
+        "no_compiler": "<b>",
+        "no_compiler_end": " is not installed or unavailable</b>",
         "eval": "<b>Code:</b> <code>",
         "eval_result": "</code>\n<b>Result:</b> <code>",
         "err": "<b>Code:</b> <code>",
@@ -170,7 +171,7 @@ class Evaluator(loader.Module):
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('blocked')}{utils.escape_html(code)}{self.strings('blocked_result')}</blockquote>"
+                f"<blockquote>{self.strings['blocked']}{utils.escape_html(code)}{self.strings['blocked_result']}</blockquote>"
             )
             return
 
@@ -185,7 +186,7 @@ class Evaluator(loader.Module):
             error_text = self.censor("\n".join(item.full_stack.splitlines()[:-1]) + "\n\n" + item.full_stack.splitlines()[-1])
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('err')}{utils.escape_html(code)}{self.strings('err_result')}{error_text}</code></blockquote>"
+                f"<blockquote>{self.strings['err']}{utils.escape_html(code)}{self.strings['err_result']}{error_text}</code></blockquote>"
             )
             return
 
@@ -196,7 +197,7 @@ class Evaluator(loader.Module):
         with contextlib.suppress(MessageIdInvalidError):
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('eval')}{utils.escape_html(code)}{self.strings('eval_result')}{utils.escape_html(self.censor(str(result)))}</code></blockquote>"
+                f"<blockquote>{self.strings['eval']}{utils.escape_html(code)}{self.strings['eval_result']}{utils.escape_html(self.censor(str(result)))}</code></blockquote>"
             )
 
     @loader.command()
@@ -209,7 +210,7 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('C (gcc)' if c else 'C++ (g++)')}</blockquote>"
+                f"<blockquote>{self.strings['no_compiler']}{'C (gcc)' if c else 'C++ (g++)'}{self.strings['no_compiler_end']}</blockquote>"
             )
             return
 
@@ -218,11 +219,11 @@ class Evaluator(loader.Module):
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('blocked')}{utils.escape_html(code)}{self.strings('blocked_result')}</blockquote>"
+                f"<blockquote>{self.strings['blocked']}{utils.escape_html(code)}{self.strings['blocked_result']}</blockquote>"
             )
             return
 
-        message = await utils.answer(message, f"<blockquote>{self.strings('compiling')}</blockquote>")
+        message = await utils.answer(message, f"<blockquote>{self.strings['compiling']}</blockquote>")
         error = False
         with tempfile.TemporaryDirectory() as tmpdir:
             file = os.path.join(tmpdir, "code.cpp")
@@ -254,12 +255,12 @@ class Evaluator(loader.Module):
             if error:
                 await utils.answer(
                     message,
-                    f"<blockquote>{self.strings('err')}{utils.escape_html(code)}{self.strings('err_result')}{utils.escape_html(result)}</code></blockquote>"
+                    f"<blockquote>{self.strings['err']}{utils.escape_html(code)}{self.strings['err_result']}{utils.escape_html(result)}</code></blockquote>"
                 )
             else:
                 await utils.answer(
                     message,
-                    f"<blockquote>{self.strings('eval')}{utils.escape_html(code)}{self.strings('eval_result')}{utils.escape_html(result)}</code></blockquote>"
+                    f"<blockquote>{self.strings['eval']}{utils.escape_html(code)}{self.strings['eval_result']}{utils.escape_html(result)}</code></blockquote>"
                 )
 
     @loader.command()
@@ -276,7 +277,7 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('Node.js')}</blockquote>"
+                f"<blockquote>{self.strings['no_compiler']}Node.js{self.strings['no_compiler_end']}</blockquote>"
             )
             return
 
@@ -285,7 +286,7 @@ class Evaluator(loader.Module):
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('blocked')}{utils.escape_html(code)}{self.strings('blocked_result')}</blockquote>"
+                f"<blockquote>{self.strings['blocked']}{utils.escape_html(code)}{self.strings['blocked_result']}</blockquote>"
             )
             return
 
@@ -309,12 +310,12 @@ class Evaluator(loader.Module):
             if error:
                 await utils.answer(
                     message,
-                    f"<blockquote>{self.strings('err')}{utils.escape_html(code)}{self.strings('err_result')}{utils.escape_html(result)}</code></blockquote>"
+                    f"<blockquote>{self.strings['err']}{utils.escape_html(code)}{self.strings['err_result']}{utils.escape_html(result)}</code></blockquote>"
                 )
             else:
                 await utils.answer(
                     message,
-                    f"<blockquote>{self.strings('eval')}{utils.escape_html(code)}{self.strings('eval_result')}{utils.escape_html(result)}</code></blockquote>"
+                    f"<blockquote>{self.strings['eval']}{utils.escape_html(code)}{self.strings['eval_result']}{utils.escape_html(result)}</code></blockquote>"
                 )
 
     @loader.command()
@@ -327,7 +328,7 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('PHP')}</blockquote>"
+                f"<blockquote>{self.strings['no_compiler']}PHP{self.strings['no_compiler_end']}</blockquote>"
             )
             return
 
@@ -336,7 +337,7 @@ class Evaluator(loader.Module):
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('blocked')}{utils.escape_html(code)}{self.strings('blocked_result')}</blockquote>"
+                f"<blockquote>{self.strings['blocked']}{utils.escape_html(code)}{self.strings['blocked_result']}</blockquote>"
             )
             return
 
@@ -360,12 +361,12 @@ class Evaluator(loader.Module):
             if error:
                 await utils.answer(
                     message,
-                    f"<blockquote>{self.strings('err')}{utils.escape_html(code)}{self.strings('err_result')}{utils.escape_html(result)}</code></blockquote>"
+                    f"<blockquote>{self.strings['err']}{utils.escape_html(code)}{self.strings['err_result']}{utils.escape_html(result)}</code></blockquote>"
                 )
             else:
                 await utils.answer(
                     message,
-                    f"<blockquote>{self.strings('eval')}{utils.escape_html(code)}{self.strings('eval_result')}{utils.escape_html(result)}</code></blockquote>"
+                    f"<blockquote>{self.strings['eval']}{utils.escape_html(code)}{self.strings['eval_result']}{utils.escape_html(result)}</code></blockquote>"
                 )
 
     @loader.command()
@@ -378,7 +379,7 @@ class Evaluator(loader.Module):
         except Exception:
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('no_compiler').format('Ruby')}</blockquote>"
+                f"<blockquote>{self.strings['no_compiler']}Ruby{self.strings['no_compiler_end']}</blockquote>"
             )
             return
 
@@ -387,7 +388,7 @@ class Evaluator(loader.Module):
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('blocked')}{utils.escape_html(code)}{self.strings('blocked_result')}</blockquote>"
+                f"<blockquote>{self.strings['blocked']}{utils.escape_html(code)}{self.strings['blocked_result']}</blockquote>"
             )
             return
 
@@ -411,12 +412,12 @@ class Evaluator(loader.Module):
             if error:
                 await utils.answer(
                     message,
-                    f"<blockquote>{self.strings('err')}{utils.escape_html(code)}{self.strings('err_result')}{utils.escape_html(result)}</code></blockquote>"
+                    f"<blockquote>{self.strings['err']}{utils.escape_html(code)}{self.strings['err_result']}{utils.escape_html(result)}</code></blockquote>"
                 )
             else:
                 await utils.answer(
                     message,
-                    f"<blockquote>{self.strings('eval')}{utils.escape_html(code)}{self.strings('eval_result')}{utils.escape_html(result)}</code></blockquote>"
+                    f"<blockquote>{self.strings['eval']}{utils.escape_html(code)}{self.strings['eval_result']}{utils.escape_html(result)}</code></blockquote>"
                 )
 
     @loader.command()
@@ -431,7 +432,7 @@ class Evaluator(loader.Module):
         if any(blocked_cmd in code.lower() for blocked_cmd in self.blocked_commands):
             await utils.answer(
                 message,
-                f"<blockquote>{self.strings('blocked')}{utils.escape_html(code)}{self.strings('blocked_result')}</blockquote>"
+                f"<blockquote>{self.strings['blocked']}{utils.escape_html(code)}{self.strings['blocked_result']}</blockquote>"
             )
             return
 
@@ -452,12 +453,12 @@ class Evaluator(loader.Module):
             if error:
                 await utils.answer(
                     message,
-                    f"<blockquote>{self.strings('err')}{utils.escape_html(code)}{self.strings('err_result')}{utils.escape_html(result)}</code></blockquote>"
+                    f"<blockquote>{self.strings['err']}{utils.escape_html(code)}{self.strings['err_result']}{utils.escape_html(result)}</code></blockquote>"
                 )
             else:
                 await utils.answer(
                     message,
-                    f"<blockquote>{self.strings('eval')}{utils.escape_html(code)}{self.strings('eval_result')}{utils.escape_html(result)}</code></blockquote>"
+                    f"<blockquote>{self.strings['eval']}{utils.escape_html(code)}{self.strings['eval_result']}{utils.escape_html(result)}</code></blockquote>"
                 )
 
     def censor(self, ret: str) -> str:
@@ -534,4 +535,4 @@ class Evaluator(loader.Module):
                     ]
                 )
             ),
-            }
+             }
