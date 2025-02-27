@@ -27,6 +27,7 @@ import contextlib
 import logging
 import os
 import re
+import time
 import typing
 
 import hikkatl
@@ -41,7 +42,7 @@ def hash_msg(message):
 async def read_stream(func: callable, stream, delay: float):
     buffer = b""
     while True:
-        data = await stream.read(1024)  # Читаем пачками по 1024 байта
+        data = await stream.read(1024)
         if not data:
             if buffer:
                 await func(buffer.decode(errors="replace"))
@@ -74,21 +75,19 @@ class MessageEditor:
         self.request_message = request_message
 
     async def update_stdout(self, stdout):
-        if self.stdout != stdout:  # Проверяем, изменился ли stdout
+        if self.stdout != stdout:
             self.stdout = stdout
             await self.redraw()
 
     async def update_stderr(self, stderr):
-        if self.stderr != stderr:  # Проверяем, изменился ли stderr
+        if self.stderr != stderr:
             self.stderr = stderr
             await self.redraw()
 
     async def redraw(self):
-        text = self.strings("running").format(utils.escape_html(self.command))  # fmt: skip
-
+        text = self.strings("running").format(utils.escape_html(self.command))
         if self.rc is not None:
             text += self.strings("finished").format(utils.escape_html(str(self.rc)))
-
         text += self.strings("stdout")
         text += utils.escape_html(self.stdout[max(len(self.stdout) - 2048, 0) :])
         stderr = utils.escape_html(self.stderr[max(len(self.stderr) - 1024, 0) :])
@@ -97,11 +96,10 @@ class MessageEditor:
 
         with contextlib.suppress(hikkatl.errors.rpcerrorlist.MessageNotModifiedError):
             try:
-                self.message = await utils.answer(self.message, text)
+                self.message = await utils.answer(self.message, f"<blockquote>{text}</blockquote>")
             except hikkatl.errors.rpcerrorlist.MessageTooLongError as e:
                 logger.error(e)
                 logger.error(text)
-        # The message is never empty due to the template header
 
     async def cmd_ended(self, rc):
         self.rc = rc
@@ -114,7 +112,7 @@ class MessageEditor:
 class SudoMessageEditor(MessageEditor):
     PASS_REQ = "[sudo] password for"
     WRONG_PASS = r"\[sudo\] password for (.*): Sorry, try again\."
-    TOO_MANY_TRIES = (r"\[sudo\] password for (.*): sudo: [0-9]+ incorrect password attempts")  # fmt: skip
+    TOO_MANY_TRIES = (r"\[sudo\] password for (.*): sudo: [0-9]+ incorrect password attempts")
 
     def __init__(self, message, command, config, strings, request_message):
         super().__init__(message, command, config, strings, request_message)
@@ -152,7 +150,7 @@ class SudoMessageEditor(MessageEditor):
             text = self.strings("auth_needed").format(self._tg_id)
 
             try:
-                await utils.answer(self.message, text)
+                await utils.answer(self.message, f"<blockquote>{text}</blockquote>")
             except hikkatl.errors.rpcerrorlist.MessageNotModifiedError as e:
                 logger.debug(e)
 
@@ -162,7 +160,7 @@ class SudoMessageEditor(MessageEditor):
 
             self.authmsg = await self.message[0].client.send_message(
                 "me",
-                self.strings("auth_msg").format(command, user),
+                f"<blockquote>{self.strings('auth_msg').format(command, user)}</blockquote>",
             )
             logger.debug("sent message to self")
 
@@ -179,7 +177,7 @@ class SudoMessageEditor(MessageEditor):
             re.fullmatch(self.TOO_MANY_TRIES, lastline) and self.state in {1, 3, 4}
         ):
             logger.debug("password wrong lots of times")
-            await utils.answer(self.message, self.strings("auth_locked"))
+            await utils.answer(self.message, f"<blockquote>{self.strings('auth_locked')}</blockquote>")
             await self.authmsg.delete()
             self.state = 2
             handled = True
@@ -198,7 +196,7 @@ class SudoMessageEditor(MessageEditor):
         self.stdout = stdout
 
         if self.state != 2:
-            self.state = 3  # Means that we got stdout only
+            self.state = 3
 
         if self.authmsg is not None:
             await self.authmsg.delete()
@@ -207,25 +205,21 @@ class SudoMessageEditor(MessageEditor):
         await self.redraw()
 
     async def on_message_edited(self, message):
-        # Message contains sensitive information.
         if self.authmsg is None:
             return
 
         logger.debug("got message edit update in self %s", str(message.id))
 
         if hash_msg(message) == hash_msg(self.authmsg):
-            # The user has provided interactive authentication. Send password to stdin for sudo.
             try:
-                self.authmsg = await utils.answer(message, self.strings("auth_ongoing"))
+                self.authmsg = await utils.answer(message, f"<blockquote>{self.strings('auth_ongoing')}</blockquote>")
             except hikkatl.errors.rpcerrorlist.MessageNotModifiedError:
-                # Try to clear personal info if the edit fails
                 await message.delete()
 
             self.state = 1
             self.process.stdin.write(
                 message.message.message.split("\n", 1)[0].encode() + b"\n"
             )
-
 
 class RawMessageEditor(SudoMessageEditor):
     def __init__(
@@ -273,11 +267,10 @@ class RawMessageEditor(SudoMessageEditor):
             ValueError,
         ):
             try:
-                await utils.answer(self.message, text)
+                await utils.answer(self.message, f"<blockquote>{text}</blockquote>")
             except hikkatl.errors.rpcerrorlist.MessageTooLongError as e:
                 logger.error(e)
                 logger.error(text)
-
 
 @loader.tds
 class TerminalMod(loader.Module):
@@ -300,9 +293,7 @@ class TerminalMod(loader.Module):
         "killed": "🛑 <b>Command terminated</b>",
         "kill_fail": "❌ <b>Failed to terminate command</b>",
         "no_cmd": "❌ <b>No active command found for this message</b>",
-        "cmd_failed": "❌ <b>Failed to execute command</b>",
-        "no_reply": "❓ <b>Please reply to a command message</b>",
-        "fw_protect": "Delay in seconds between output updates to prevent flooding",
+        "blocked": "🚫 <b>Command blocked for security reasons</b>",
     }
 
     blocked_commands = ["kill", "exit", "nc", "netcat", "ncat", "socat", "perl", "ruby", "php","msfvenom", "metasploit", "weevely", "empire", "pupy", "sliver", "havoc","meterpreter", "evil-winrm", "ligolo", "chisel", "frp", "fast-reverse-proxy", "shell", "socket", "reverse", "session", "rm"]
@@ -312,7 +303,7 @@ class TerminalMod(loader.Module):
             loader.ConfigValue(
                 "FLOOD_WAIT_PROTECT",
                 2,
-                lambda: self.strings("fw_protect"),
+                lambda: "Delay in seconds between output updates to prevent flooding",
                 validator=loader.validators.Integer(minimum=0),
             ),
         )
@@ -326,9 +317,7 @@ class TerminalMod(loader.Module):
     async def aptcmd(self, message):
         await self.run_command(
             message,
-            ("apt " if os.geteuid() == 0 else "sudo -S apt ")
-            + utils.get_args_raw(message)
-            + " -y",
+            ("apt " if os.geteuid() == 0 else "sudo -S apt ") + utils.get_args_raw(message) + " -y",
             RawMessageEditor(
                 message,
                 f"apt {utils.get_args_raw(message)}",
@@ -345,26 +334,24 @@ class TerminalMod(loader.Module):
         cmd: str,
         editor: typing.Optional[MessageEditor] = None,
     ):
+        start_time = time.perf_counter()
+
         if any(blocked_cmd in cmd for blocked_cmd in self.blocked_commands):
             stderr_text = f"Permission denied"
-
+            stop_time = time.perf_counter()
             if editor is None:
                 editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
-
             await editor.update_stderr(stderr_text)
             await editor.cmd_ended(1)
             return
 
         if len(cmd.split(" ")) > 1 and cmd.split(" ")[0] == "sudo":
             needsswitch = True
-
             for word in cmd.split(" ", 1)[1].split(" "):
                 if word[0] != "-":
                     break
-
                 if word == "-S":
                     needsswitch = False
-
             if needsswitch:
                 cmd = " ".join([cmd.split(" ", 1)[0], "-S", cmd.split(" ", 1)[1]])
 
@@ -380,7 +367,6 @@ class TerminalMod(loader.Module):
             editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
 
         editor.update_process(sproc)
-
         self.activecmds[hash_msg(message)] = sproc
 
         await editor.redraw()
@@ -404,7 +390,7 @@ class TerminalMod(loader.Module):
     @loader.command()
     async def terminatecmd(self, message):
         if not message.is_reply:
-            await utils.answer(message, self.strings("what_to_kill"))
+            await utils.answer(message, f"<blockquote>{self.strings('what_to_kill')}</blockquote>")
             return
                 
         if hash_msg(await message.get_reply_message()) in self.activecmds:
@@ -415,10 +401,9 @@ class TerminalMod(loader.Module):
                     ].terminate()
                 else:
                     self.activecmds[hash_msg(await message.get_reply_message())].kill()
+                await utils.answer(message, f"<blockquote>{self.strings('killed')}</blockquote>")
             except Exception:
                 logger.exception("Killing process failed")
-                await utils.answer(message, self.strings("kill_fail"))
-            else:
-                await utils.answer(message, self.strings("killed"))
+                await utils.answer(message, f"<blockquote>{self.strings('kill_fail')}</blockquote>")
         else:
-            await utils.answer(message, self.strings("no_cmd"))
+            await utils.answer(message, f"<blockquote>{self.strings('no_cmd')}</blockquote>")
