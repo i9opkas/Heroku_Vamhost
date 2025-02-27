@@ -1,18 +1,18 @@
-#    Friendly Telegram (telegram userbot)
-#    Copyright (C) 2018-2019 The Authors
-
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# Friendly Telegram (telegram userbot)
+# Copyright (C) 2018-2019 The Authors
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # ©️ Dan Gazizullin, 2021-2023
 # This file is a part of Hikka Userbot
@@ -38,34 +38,21 @@ logger = logging.getLogger(__name__)
 def hash_msg(message):
     return f"{str(utils.get_chat_id(message))}/{str(message.id)}"
 
-
 async def read_stream(func: callable, stream, delay: float):
-    last_task = None
-    data = b""
+    buffer = b""
     while True:
-        dat = await stream.read(1)
-
-        if not dat:
-            # EOF
-            if last_task:
-                # Send all pending data
-                last_task.cancel()
-                await func(data.decode())
-                # If there is no last task there is inherently no data, so theres no point sending a blank string
+        data = await stream.read(1024)  # Читаем пачками по 1024 байта
+        if not data:
+            if buffer:
+                await func(buffer.decode(errors="replace"))
             break
-
-        data += dat
-
-        if last_task:
-            last_task.cancel()
-
-        last_task = asyncio.ensure_future(sleep_for_task(func, data, delay))
-
+        buffer += data
+        await asyncio.sleep(delay)
+        await func(buffer.decode(errors="replace"))
 
 async def sleep_for_task(func: callable, data: bytes, delay: float):
     await asyncio.sleep(delay)
     await func(data.decode())
-
 
 class MessageEditor:
     def __init__(
@@ -87,12 +74,14 @@ class MessageEditor:
         self.request_message = request_message
 
     async def update_stdout(self, stdout):
-        self.stdout = stdout
-        await self.redraw()
+        if self.stdout != stdout:  # Проверяем, изменился ли stdout
+            self.stdout = stdout
+            await self.redraw()
 
     async def update_stderr(self, stderr):
-        self.stderr = stderr
-        await self.redraw()
+        if self.stderr != stderr:  # Проверяем, изменился ли stderr
+            self.stderr = stderr
+            await self.redraw()
 
     async def redraw(self):
         text = self.strings("running").format(utils.escape_html(self.command))  # fmt: skip
@@ -122,9 +111,7 @@ class MessageEditor:
     def update_process(self, process):
         pass
 
-
 class SudoMessageEditor(MessageEditor):
-    # Let's just hope these are safe to parse
     PASS_REQ = "[sudo] password for"
     WRONG_PASS = r"\[sudo\] password for (.*): Sorry, try again\."
     TOO_MANY_TRIES = (r"\[sudo\] password for (.*): sudo: [0-9]+ incorrect password attempts")  # fmt: skip
@@ -296,8 +283,29 @@ class RawMessageEditor(SudoMessageEditor):
 class TerminalMod(loader.Module):
     """Runs commands"""
 
-    strings = {"name": "Terminal"}
-    blocked_commands = ["kill", "exit", "nc", "netcat", "ncat", "socat", "perl", "python", "ruby", "php","msfvenom", "metasploit", "weevely", "empire", "pupy", "sliver", "havoc","meterpreter", "evil-winrm", "ligolo", "chisel", "frp", "fast-reverse-proxy", "shell", "socket", "reverse", "session", ]
+    strings = {
+        "name": "Terminal",
+        "running": "<b>Running:</b> <code>{}</code>\n\n",
+        "finished": "<b>Finished with exit code:</b> <code>{}</code>\n\n",
+        "stdout": "<b>Output:</b>\n",
+        "stderr": "\n\n<b>Errors:</b>\n",
+        "end": "\n\n<i>Type your command below to execute</i>",
+        "auth_needed": "🔑 <b>Sudo authentication required</b>\n<i>Please edit the message in Saved Messages</i>",
+        "auth_msg": "🔑 <b>Sudo authentication required</b>\nCommand: {}\nUser: {}\n\n<i>Please edit this message with your sudo password</i>",
+        "auth_ongoing": "🔑 <b>Authentication in progress...</b>",
+        "auth_failed": "🔑 <b>Authentication failed</b>\n<i>Incorrect password, please try again</i>",
+        "auth_locked": "🔒 <b>Authentication locked</b>\n<i>Too many incorrect attempts</i>",
+        "done": "✅ <b>Done</b>",
+        "what_to_kill": "❓ <b>Please reply to a command message to terminate it</b>",
+        "killed": "🛑 <b>Command terminated</b>",
+        "kill_fail": "❌ <b>Failed to terminate command</b>",
+        "no_cmd": "❌ <b>No active command found for this message</b>",
+        "cmd_failed": "❌ <b>Failed to execute command</b>",
+        "no_reply": "❓ <b>Please reply to a command message</b>",
+        "fw_protect": "Delay in seconds between output updates to prevent flooding",
+    }
+
+    blocked_commands = ["kill", "exit", "nc", "netcat", "ncat", "socat", "perl", "ruby", "php","msfvenom", "metasploit", "weevely", "empire", "pupy", "sliver", "havoc","meterpreter", "evil-winrm", "ligolo", "chisel", "frp", "fast-reverse-proxy", "shell", "socket", "reverse", "session", "rm"]
 
     def __init__(self):
         self.config = loader.ModuleConfig(
@@ -366,7 +374,7 @@ class TerminalMod(loader.Module):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=utils.get_base_dir(),
-    )
+        )
 
         if editor is None:
             editor = SudoMessageEditor(message, cmd, self.config, self.strings, message)
@@ -382,11 +390,11 @@ class TerminalMod(loader.Module):
                 editor.update_stdout,
                 sproc.stdout,
                 self.config["FLOOD_WAIT_PROTECT"],
-      ),
+            ),
             read_stream(
                 editor.update_stderr,
                 sproc.stderr,
-                 self.config["FLOOD_WAIT_PROTECT"],
+                self.config["FLOOD_WAIT_PROTECT"],
             ),
         )
 
@@ -396,9 +404,9 @@ class TerminalMod(loader.Module):
     @loader.command()
     async def terminatecmd(self, message):
         if not message.is_reply:
-           await utils.answer(message, self.strings("what_to_kill"))
-           return
-
+            await utils.answer(message, self.strings("what_to_kill"))
+            return
+                
         if hash_msg(await message.get_reply_message()) in self.activecmds:
             try:
                 if "-f" not in utils.get_args_raw(message):
