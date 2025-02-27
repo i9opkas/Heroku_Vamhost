@@ -148,8 +148,8 @@ class Evaluator(loader.Module):
         "name": "Evaluator",
         "compiling": "<b>Compiling...</b>",
         "no_compiler": "<emoji document_id={}>❌</emoji> <b>{} is not installed or unavailable</b>",
-        "eval": "💾 Код вернул:\n<pre><code class=\"language-{}\">{}</code></pre>\n⏳ Выполнен за <time> секунд",
-        "err": "💾 Код вернул:\n<emoji document_id=5440381017384822513>🚫</emoji> Ошибка:\n<pre><code class=\"language-{}\">{}</code></pre>\n⏳ Выполнен за <time> секунд",
+        "eval": "💾 Код вернул:\n<pre><code class=\"language-{}\">{}</code></pre>\n⏳ Выполнен за {} секунд",
+        "err": "💾 Код вернул:\n<emoji document_id=5440381017384822513>🚫</emoji> Ошибка:\n<pre><code class=\"language-{}\">{}</code></pre>\n⏳ Выполнен за {} секунд",
     }
 
     blocked_commands = [
@@ -182,9 +182,10 @@ class Evaluator(loader.Module):
         except Exception:
             item = HikkaException.from_exc_info(*sys.exc_info())
             stop_time = time.perf_counter()
+            error_text = self.censor("\n".join(item.full_stack.splitlines()[:-1]) + "\n\n🚫 " + item.full_stack.splitlines()[-1])
             await utils.answer(
                 message,
-                f"<blockquote>💻 Код:\n<pre><code class=\"language-python\">{utils.escape_html(code)}</code></pre>\n{self.strings('err').format('python', self.censor('\n'.join(item.full_stack.splitlines()[:-1]) + '\n\n🚫 ' + item.full_stack.splitlines()[-1]), round(stop_time - start_time, 5))}</blockquote>"
+                f"<blockquote>💻 Код:\n<pre><code class=\"language-python\">{utils.escape_html(code)}</code></pre>\n{self.strings('err').format('python', error_text, round(stop_time - start_time, 5))}</blockquote>"
             )
             return
 
@@ -520,4 +521,4 @@ class Evaluator(loader.Module):
                     ]
                 )
             ),
-}
+                }
