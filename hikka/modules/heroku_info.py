@@ -172,26 +172,27 @@ class HerokuInfoMod(loader.Module):
             return await self.upload_pp_to_oxo(photos[0])
         return "https://imgur.com/a/7LBPJiq.png"
 
-    async def info(self, _: InlineQuery) -> dict:
-        """Send userbot info"""
+    async def info(self, query: InlineQuery) -> dict:
+    """Send userbot info"""
 
-        if message.chat_id in self.BLOCKED_CHATS:
-            await utils.answer(message, "🤬 ты что, далбаеб?")
-            return
-            
+    if query.chat.peer_id in self.BLOCKED_CHATS:
         return {
-            "title": self.strings("send_info"),
-            "description": self.strings("description"),
-            **(
-                {"photo": self.config["banner_url"], "caption": self._render_info(True)}
-                if self.config["banner_url"]
-                else {"message": self._render_info(True)}
-            ),
-            "thumb": (
-                "https://github.com/hikariatama/Hikka/raw/master/assets/hikka_pfp.png"
-            ),
-            "reply_markup": self._get_mark(),
+            "title": "Ошибка",
+            "description": "🤬 ты что, далбаеб?",
+            "message": "🤬 ты что, далбаеб?",
         }
+        
+    return {
+        "title": self.strings("send_info"),
+        "description": self.strings("description"),
+        **(
+            {"photo": self.config["banner_url"], "caption": self._render_info(True)}
+            if self.config["banner_url"]
+            else {"message": self._render_info(True)}
+        ),
+        "thumb": "https://github.com/hikariatama/Hikka/raw/master/assets/hikka_pfp.png",
+        "reply_markup": self._get_mark(),
+    }
 
     @loader.command()
     async def infocmd(self, message: Message):
