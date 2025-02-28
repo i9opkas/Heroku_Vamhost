@@ -170,7 +170,7 @@ class HerokuInfoMod(loader.Module):
         photos = await self._client.get_profile_photos('me')
         if photos:
             return await self.upload_pp_to_oxo(photos[0])
-        return "https://imgur.com/a/7LBPJiq.png"
+            return "https://imgur.com/a/7LBPJiq.png"
 
     async def info(self, _: InlineQuery) -> dict:
         """Send userbot info"""
@@ -201,26 +201,26 @@ class HerokuInfoMod(loader.Module):
             except Exception:
                 pass
         if message.chat_id in self.BLOCKED_CHAT_IDS:
-    await utils.answer(message, "🤬 ты что, далбаеб?")
-else:
-    await utils.answer_file(
-        message,
-        self.config["banner_url"],
-        self._render_info(False),
+            await utils.answer(message, "🤬 ты что, далбаеб?")
+        else:
+            await utils.answer_file(
+                message,
+                self.config["banner_url"],
+                self._render_info(False),
     )
 
     @loader.command()
     async def herokuinfo(self, message: Message):
         if message.chat_id in self.BLOCKED_CHAT_IDS:
-    await utils.answer(message, "🤬 ты что, далбаеб?")
-else:
-    await utils.answer(message, self.strings("desc"))
+             await utils.answer(message, "🤬 ты что, далбаеб?")
+         else:
+             await utils.answer(message, self.strings("desc"))
 
     @loader.command()
     async def setinfo(self, message: Message):
         if message.chat_id in self.BLOCKED_CHAT_IDS:
-    await utils.answer(message, "🤬 ты что, далбаеб?")
-    return
+            await utils.answer(message, "🤬 ты что, далбаеб?")
+            return
 
 if not (args := utils.get_args_html(message)):
     return await utils.answer(message, self.strings("setinfo_no_args"))
