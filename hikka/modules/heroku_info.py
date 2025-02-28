@@ -19,7 +19,8 @@ class HerokuInfoMod(loader.Module):
     """Show userbot info"""
 
     strings = {"name": "HerokuInfo"}
-
+    BLOCKED_CHATS = [-1002190703815]
+    
     def __init__(self):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
