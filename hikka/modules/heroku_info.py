@@ -174,6 +174,10 @@ class HerokuInfoMod(loader.Module):
     async def info(self, _: InlineQuery) -> dict:
         """Send userbot info"""
 
+        if message.chat_id in self.BLOCKED_CHATS:
+            await utils.answer(message, "🤬 ты что, далбаеб?")
+            return
+            
         return {
             "title": self.strings("send_info"),
             "description": self.strings("description"),
