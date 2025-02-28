@@ -207,14 +207,14 @@ class HerokuInfoMod(loader.Module):
                 message,
                 self.config["banner_url"],
                 self._render_info(False),
-    )
+            )
 
     @loader.command()
     async def herokuinfo(self, message: Message):
         if message.chat_id in self.BLOCKED_CHAT_IDS:
-             await utils.answer(message, "🤬 ты что, далбаеб?")
-         else:
-             await utils.answer(message, self.strings("desc"))
+            await utils.answer(message, "🤬 ты что, далбаеб?")
+        else:
+            await utils.answer(message, self.strings("desc"))
 
     @loader.command()
     async def setinfo(self, message: Message):
@@ -222,11 +222,11 @@ class HerokuInfoMod(loader.Module):
             await utils.answer(message, "🤬 ты что, далбаеб?")
             return
 
-if not (args := utils.get_args_html(message)):
-    return await utils.answer(message, self.strings("setinfo_no_args"))
+        if not (args := utils.get_args_html(message)):
+            return await utils.answer(message, self.strings("setinfo_no_args"))
 
-self.config["custom_message"] = args
-await utils.answer(message, self.strings("setinfo_success"))
+        self.config["custom_message"] = args
+        await utils.answer(message, self.strings("setinfo_success"))
 
         self.config["custom_message"] = args
         await utils.answer(message, self.strings("setinfo_success"))
