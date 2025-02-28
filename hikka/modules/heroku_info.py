@@ -172,7 +172,7 @@ class HerokuInfoMod(loader.Module):
             return await self.upload_pp_to_oxo(photos[0])
         return "https://imgur.com/a/7LBPJiq.png"
 
-    async def info(self, query: InlineQuery) -> dict:
+async def info(self, query: InlineQuery) -> dict:
     """Send userbot info"""
 
     if query.chat.peer_id in self.BLOCKED_CHATS:
@@ -181,7 +181,7 @@ class HerokuInfoMod(loader.Module):
             "description": "🤬 ты что, далбаеб?",
             "message": "🤬 ты что, далбаеб?",
         }
-        
+    
     return {
         "title": self.strings("send_info"),
         "description": self.strings("description"),
