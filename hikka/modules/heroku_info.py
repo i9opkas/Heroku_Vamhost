@@ -19,8 +19,8 @@ class HerokuInfoMod(loader.Module):
     """Show userbot info"""
 
     strings = {"name": "HerokuInfo"}
-    BLOCKED_CHATS = [-1002190703815, -1002317094806]
-    
+    BLOCKED_CHAT_IDS = [-1002190703815, -1002489587160]
+
     def __init__(self):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
@@ -172,27 +172,22 @@ class HerokuInfoMod(loader.Module):
             return await self.upload_pp_to_oxo(photos[0])
         return "https://imgur.com/a/7LBPJiq.png"
 
-async def info(self, query: InlineQuery) -> dict:
-    """Send userbot info"""
+    async def info(self, _: InlineQuery) -> dict:
+        """Send userbot info"""
 
-    if query.chat.peer_id in self.BLOCKED_CHATS:
         return {
-            "title": "Ошибка",
-            "description": "🤬 ты что, далбаеб?",
-            "message": "🤬 ты что, далбаеб?",
+            "title": self.strings("send_info"),
+            "description": self.strings("description"),
+            **(
+                {"photo": self.config["banner_url"], "caption": self._render_info(True)}
+                if self.config["banner_url"]
+                else {"message": self._render_info(True)}
+            ),
+            "thumb": (
+                "https://github.com/hikariatama/Hikka/raw/master/assets/hikka_pfp.png"
+            ),
+            "reply_markup": self._get_mark(),
         }
-    
-    return {
-        "title": self.strings("send_info"),
-        "description": self.strings("description"),
-        **(
-            {"photo": self.config["banner_url"], "caption": self._render_info(True)}
-            if self.config["banner_url"]
-            else {"message": self._render_info(True)}
-        ),
-        "thumb": "https://github.com/hikariatama/Hikka/raw/master/assets/hikka_pfp.png",
-        "reply_markup": self._get_mark(),
-    }
 
     @loader.command()
     async def infocmd(self, message: Message):
@@ -205,21 +200,34 @@ async def info(self, query: InlineQuery) -> dict:
                     await self._db.set("Config", "banner_url", new_banner_url)
             except Exception:
                 pass
-        await utils.answer_file(
-            message,
-            self.config["banner_url"],
-            self._render_info(False),
-        )
+        if message.chat_id in self.BLOCKED_CHAT_IDS:
+    await utils.answer(message, "🤬 ты что, далбаеб?")
+else:
+    await utils.answer_file(
+        message,
+        self.config["banner_url"],
+        self._render_info(False),
+    )
 
     @loader.command()
     async def herokuinfo(self, message: Message):
-        await utils.answer(message, self.strings("desc"))
+        if message.chat_id in self.BLOCKED_CHAT_IDS:
+    await utils.answer(message, "🤬 ты что, далбаеб?")
+else:
+    await utils.answer(message, self.strings("desc"))
 
     @loader.command()
     async def setinfo(self, message: Message):
-        if not (args := utils.get_args_html(message)):
-            return await utils.answer(message, self.strings("setinfo_no_args"))
+        if message.chat_id in self.BLOCKED_CHAT_IDS:
+    await utils.answer(message, "🤬 ты что, далбаеб?")
+    return
+
+if not (args := utils.get_args_html(message)):
+    return await utils.answer(message, self.strings("setinfo_no_args"))
+
+self.config["custom_message"] = args
+await utils.answer(message, self.strings("setinfo_success"))
 
         self.config["custom_message"] = args
         await utils.answer(message, self.strings("setinfo_success"))
-
+                
