@@ -902,113 +902,116 @@ class LoaderMod(loader.Module):
             else ""
         )
 
-        def loaded_msg(use_subscribe: bool = True):
-            nonlocal \
-                modname, \
-                version, \
-                modhelp, \
-                developer, \
-                origin, \
-                subscribe, \
-                blob_link, \
-                depends_from
-            return self.strings("loaded").format(
-                modname.strip(),
-                version,
-                utils.ascii_face(),
-                modhelp,
-                developer if not subscribe or not use_subscribe else "",
-                depends_from,
-                (
-                    self.strings("modlink").format(origin)
-                    if origin != "<string>" and self.config["share_link"]
-                    else ""
-                ),
-                blob_link,
-                subscribe if use_subscribe else "",
-            )
+    def loaded_msg(use_subscribe: bool = True):
+    nonlocal \
+        modname, \
+        version, \
+        modhelp, \
+        developer, \
+        origin, \
+        subscribe, \
+        blob_link, \
+        depends_from
+    return "\n".join(
+        f"<blockquote>{line}</blockquote>"
+        for line in self.strings("loaded").format(
+            modname.strip(),
+            version,
+            utils.ascii_face(),
+            modhelp,
+            developer if not subscribe or not use_subscribe else "",
+            depends_from,
+            (
+                self.strings("modlink").format(origin)
+                if origin != "<string>" and self.config["share_link"]
+                else ""
+            ),
+            blob_link,
+            subscribe if use_subscribe else "",
+        ).split("\n")
+    )
 
-        if developer:
-            if developer.startswith("@") and developer not in self.get(
-                "do_not_subscribe", []
-            ):
-                if (
-                    developer_entity
-                    and getattr(developer_entity, "left", True)
-                    and self._db.get(main.__name__, "suggest_subscribe", True)
-                ):
-                    subscribe = self.strings("suggest_subscribe").format(
-                        f"@{utils.escape_html(developer_entity.username)}"
-                    )
-                    subscribe_markup = [
-                        {
-                            "text": self.strings("subscribe"),
-                            "callback": self._inline__subscribe,
-                            "args": (
-                                developer_entity.id,
-                                functools.partial(loaded_msg, use_subscribe=False),
-                                True,
-                            ),
-                        },
-                        {
-                            "text": self.strings("no_subscribe"),
-                            "callback": self._inline__subscribe,
-                            "args": (
-                                developer,
-                                functools.partial(loaded_msg, use_subscribe=False),
-                                False,
-                            ),
-                        },
-                    ]
-
-            developer = self.strings("developer").format(
-                utils.escape_html(developer)
-                if isinstance(developer_entity, Channel)
-                else f"<code>{utils.escape_html(developer)}</code>"
-            )
-        else:
-            developer = ""
-
-        if any(
-            line.replace(" ", "") == "#scope:disable_onload_docs"
-            for line in doc.splitlines()
+if developer:
+    if developer.startswith("@") and developer not in self.get(
+        "do_not_subscribe", []
+    ):
+        if (
+            developer_entity
+            and getattr(developer_entity, "left", True)
+            and self._db.get(main.__name__, "suggest_subscribe", True)
         ):
-            await utils.answer(message, loaded_msg(), reply_markup=subscribe_markup)
-            return
-
-        for _name, fun in sorted(
-            instance.commands.items(),
-            key=lambda x: x[0],
-        ):
-            modhelp += "\n{} <code>{}{}</code> {}".format(
-                "<emoji document_id=5197195523794157505>▫️</emoji>",
-                utils.escape_html(self.get_prefix()),
-                _name,
-                (
-                    utils.escape_html(inspect.getdoc(fun))
-                    if fun.__doc__
-                    else self.strings("undoc")
-                ),
+            subscribe = self.strings("suggest_subscribe").format(
+                f"@{utils.escape_html(developer_entity.username)}"
             )
-
-        if self.inline.init_complete:
-            for _name, fun in sorted(
-                instance.inline_handlers.items(),
-                key=lambda x: x[0],
-            ):
-                modhelp += self.strings("ihandler").format(
-                    f"@{self.inline.bot_username} {_name}",
-                    (
-                        utils.escape_html(inspect.getdoc(fun))
-                        if fun.__doc__
-                        else self.strings("undoc")
+            subscribe_markup = [
+                {
+                    "text": self.strings("subscribe"),
+                    "callback": self._inline__subscribe,
+                    "args": (
+                        developer_entity.id,
+                        functools.partial(loaded_msg, use_subscribe=False),
+                        True,
                     ),
-                )
+                },
+                {
+                    "text": self.strings("no_subscribe"),
+                    "callback": self._inline__subscribe,
+                    "args": (
+                        developer,
+                        functools.partial(loaded_msg, use_subscribe=False),
+                        False,
+                    ),
+                },
+            ]
 
-        try:
-            await utils.answer(message, loaded_msg(), reply_markup=subscribe_markup)
-        except MediaCaptionTooLongError:
-            await message.reply(loaded_msg(False))
+    developer = self.strings("developer").format(
+        utils.escape_html(developer)
+        if isinstance(developer_entity, Channel)
+        else f"<code>{utils.escape_html(developer)}</code>"
+    )
+else:
+    developer = ""
+
+if any(
+    line.replace(" ", "") == "#scope:disable_onload_docs"
+    for line in doc.splitlines()
+):
+    await utils.answer(message, loaded_msg(), reply_markup=subscribe_markup)
+    return
+
+for _name, fun in sorted(
+    instance.commands.items(),
+    key=lambda x: x[0],
+):
+    modhelp += "\n{} <code>{}{}</code> {}".format(
+        "<emoji document_id=5197195523794157505>▫️</emoji>",
+        utils.escape_html(self.get_prefix()),
+        _name,
+        (
+            utils.escape_html(inspect.getdoc(fun))
+            if fun.__doc__
+            else self.strings("undoc")
+        ),
+    )
+
+if self.inline.init_complete:
+    for _name, fun in sorted(
+        instance.inline_handlers.items(),
+        key=lambda x: x[0],
+    ):
+        modhelp += self.strings("ihandler").format(
+            f"@{self.inline.bot_username} {_name}",
+            (
+                utils.escape_html(inspect.getdoc(fun))
+                if fun.__doc__
+                else self.strings("undoc")
+            ),
+        )
+
+try:
+    await utils.answer(message, loaded_msg(), reply_markup=subscribe_markup)
+except MediaCaptionTooLongError:
+    await message.reply(loaded_msg(False))
 
     async def _inline__subscribe(
         self,
