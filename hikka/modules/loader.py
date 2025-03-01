@@ -903,33 +903,33 @@ class LoaderMod(loader.Module):
         )
 
     def loaded_msg(use_subscribe: bool = True):
-    nonlocal \
-        modname, \
-        version, \
-        modhelp, \
-        developer, \
-        origin, \
-        subscribe, \
-        blob_link, \
-        depends_from
-    return "\n".join(
-        f"<blockquote>{line}</blockquote>"
-        for line in self.strings("loaded").format(
-            modname.strip(),
-            version,
-            utils.ascii_face(),
-            modhelp,
-            developer if not subscribe or not use_subscribe else "",
-            depends_from,
-            (
-                self.strings("modlink").format(origin)
-                if origin != "<string>" and self.config["share_link"]
-                else ""
-            ),
-            blob_link,
-            subscribe if use_subscribe else "",
-        ).split("\n")
-    )
+        nonlocal \
+            modname, \
+            version, \
+            modhelp, \
+            developer, \
+            origin, \
+            subscribe, \
+            blob_link, \
+            depends_from
+        return "\n".join(
+            f"<blockquote>{line}</blockquote>"
+            for line in self.strings("loaded").format(
+                modname.strip(),
+                version,
+                utils.ascii_face(),
+                modhelp,
+                developer if not subscribe or not use_subscribe else "",
+                depends_from,
+                (
+                    self.strings("modlink").format(origin)
+                    if origin != "<string>" and self.config["share_link"]
+                    else ""
+                ),
+                blob_link,
+                subscribe if use_subscribe else "",
+            ).split("\n")
+        )
 
 if developer:
     if developer.startswith("@") and developer not in self.get(
