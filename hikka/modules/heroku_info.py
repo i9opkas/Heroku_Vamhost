@@ -1,4 +1,8 @@
-# ©️ Dan Gazizullin, 2021-2023
+self.strings("setinfo_success"))
+
+        self.config["custom_message"] = args
+        await utils.answer(message, self.strings("setinfo_success"))
+                # ©️ Dan Gazizullin, 2021-2023
 # This file is a part of Hikka Userbot
 # 🌐 https://github.com/hikariatama/Hikka
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
@@ -19,7 +23,6 @@ class HerokuInfoMod(loader.Module):
     """Show userbot info"""
 
     strings = {"name": "HerokuInfo"}
-    BLOCKED_CHAT_IDS = [2190703815, 2489587160]
 
     def __init__(self):
         self.config = loader.ModuleConfig(
@@ -170,7 +173,7 @@ class HerokuInfoMod(loader.Module):
         photos = await self._client.get_profile_photos('me')
         if photos:
             return await self.upload_pp_to_oxo(photos[0])
-            return "https://imgur.com/a/7LBPJiq.png"
+        return "https://imgur.com/a/7LBPJiq.png"
 
     async def info(self, _: InlineQuery) -> dict:
         """Send userbot info"""
@@ -200,34 +203,21 @@ class HerokuInfoMod(loader.Module):
                     await self._db.set("Config", "banner_url", new_banner_url)
             except Exception:
                 pass
-        if message.chat_id in self.BLOCKED_CHAT_IDS:
-            await utils.answer(message, "🤬 ты что, далбаеб?")
-        else:
-            await utils.answer_file(
-                message,
-                self.config["banner_url"],
-                self._render_info(False),
-            )
+        await utils.answer_file(
+            message,
+            self.config["banner_url"],
+            self._render_info(False),
+        )
 
     @loader.command()
     async def herokuinfo(self, message: Message):
-        if message.chat_id in self.BLOCKED_CHAT_IDS:
-            await utils.answer(message, "🤬 ты что, далбаеб?")
-        else:
-            await utils.answer(message, self.strings("desc"))
+        await utils.answer(message, self.strings("desc"))
 
     @loader.command()
     async def setinfo(self, message: Message):
-        if message.chat_id in self.BLOCKED_CHAT_IDS:
-            await utils.answer(message, "🤬 ты что, далбаеб?")
-            return
-
         if not (args := utils.get_args_html(message)):
             return await utils.answer(message, self.strings("setinfo_no_args"))
 
         self.config["custom_message"] = args
         await utils.answer(message, self.strings("setinfo_success"))
-
-        self.config["custom_message"] = args
-        await utils.answer(message, self.strings("setinfo_success"))
-                
+        
