@@ -652,8 +652,6 @@ class LoaderMod(loader.Module):
                     )
 
                 pip = await asyncio.create_subprocess_exec(
-                    sys.executable,
-                    "-m",
                     "pip",
                     "install",
                     "--upgrade",
