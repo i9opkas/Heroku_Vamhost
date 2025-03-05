@@ -55,7 +55,7 @@ RUN chmod +x /entrypoint.sh
 WORKDIR /Hikka
 
 # Открываем порт
-EXPOSE 8080
+EXPOSE 10000
 
 # Запускаем скрипт и приложение
 ENTRYPOINT ["/bin/sh", "-c", "python -m hikka & /entrypoint.sh"]
