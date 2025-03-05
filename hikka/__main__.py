@@ -1,4 +1,4 @@
-"""Entry point. Checks for user and starts main script"""
+"""Entry point. Checks for user and starts main script (test)"""
 
 # ©️ Dan Gazizullin, 2021-2023
 # This file is a part of Hikka Userbot
