@@ -5,8 +5,7 @@ set -e
 FORBIDDEN_UTILS="socat nc netcat php lua telnet ncat cryptcat rlwrap msfconsole hydra medusa john hashcat sqlmap metasploit empire cobaltstrike ettercap bettercap responder mitmproxy evil-winrm chisel ligolo revshells powershell certutil bitsadmin smbclient impacket-scripts smbmap crackmapexec enum4linux ldapsearch onesixtyone snmpwalk zphisher socialfish blackeye weeman aircrack-ng reaver pixiewps wifite kismet horst wash bully wpscan commix xerosploit slowloris hping iodine iodine-client iodine-server"
 
 # Пути
-DATA_DIR="/data"
-CONFIG_FILE="$DATA_DIR/config.json"  # Файл конфига (можно изменить формат/имя)
+DATA_DIR="/data"  # Используем ~/data, что на Render обычно означает /data
 
 # Проверка и установка зависимостей для работы с PostgreSQL
 if ! python -c "import psycopg2" >/dev/null 2>&1; then
@@ -20,7 +19,10 @@ if [ -z "$DATABASE_URL" ]; then
     exit 1
 fi
 
-# Инициализация базы данных с таблицей состояния
+# Создание директории, если её нет
+mkdir -p "$DATA_DIR"
+
+# Инициализация базы данных
 init_db() {
     python - <<EOF
 import psycopg2
@@ -33,22 +35,10 @@ try:
         CREATE TABLE IF NOT EXISTS cell_data (
             id SERIAL PRIMARY KEY,
             filename VARCHAR(255) UNIQUE,
-            content BYTEA,  -- Для бинарных данных (сессия, конфиг)
+            content TEXT,
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS instance_state (
-            id SERIAL PRIMARY KEY,
-            state VARCHAR(50),
-            last_shutdown TIMESTAMP,
-            last_startup TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-    # Проверяем, существует ли запись о состоянии
-    cursor.execute("SELECT COUNT(*) FROM instance_state;")
-    if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO instance_state (state) VALUES ('created');")
     conn.commit()
     print("База данных инициализирована!")
 except Error as e:
@@ -61,39 +51,8 @@ finally:
 EOF
 }
 
-# Проверка состояния инстанции (заснул или создан заново)
-check_instance_state() {
-    python - <<EOF
-import psycopg2
-import os
-
-db_url = "$DATA_URL"
-
-try:
-    conn = psycopg2.connect(db_url)
-    cursor = conn.cursor()
-    cursor.execute("SELECT state, last_shutdown FROM instance_state ORDER BY id DESC LIMIT 1;")
-    state, last_shutdown = cursor.fetchone()
-    if state == 'created' and last_shutdown is None:
-        print("Инстанция создана впервые.")
-    elif state == 'sleeping' and last_shutdown is not None:
-        print("Инстанция проснулась после сна.")
-        cursor.execute("UPDATE instance_state SET state = 'awake', last_startup = CURRENT_TIMESTAMP WHERE id = (SELECT MAX(id) FROM instance_state);")
-    else:
-        print("Неизвестное состояние инстанции.")
-    conn.commit()
-except Exception as e:
-    print(f"Ошибка проверки состояния: {e}")
-finally:
-    if 'cursor' in locals():
-        cursor.close()
-    if 'conn' in locals():
-        conn.close()
-EOF
-}
-
-# Восстановление данных из базы в /data
-restore_data_from_db() {
+# Загрузка данных из ~/data в базу данных при запуске
+load_data_to_db() {
     python - <<EOF
 import psycopg2
 import os
@@ -104,20 +63,21 @@ db_url = "$DATABASE_URL"
 try:
     conn = psycopg2.connect(db_url)
     cursor = conn.cursor()
-    cursor.execute("SELECT filename, content FROM cell_data;")
-    data = cursor.fetchall()
-    if data:
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-        for filename, content in data:
-            filepath = os.path.join(data_dir, filename)
-            with open(filepath, 'wb') as f:
-                f.write(content)
-        print("Данные из базы восстановлены в /data!")
-    else:
-        print("В базе нет данных для восстановления, ждём создания файлов.")
+    for filename in os.listdir(data_dir):
+        filepath = os.path.join(data_dir, filename)
+        if os.path.isfile(filepath):
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            cursor.execute("""
+                INSERT INTO cell_data (filename, content)
+                VALUES (%s, %s)
+                ON CONFLICT (filename)
+                DO UPDATE SET content = EXCLUDED.content, timestamp = CURRENT_TIMESTAMP;
+            """, (filename, content))
+    conn.commit()
+    print("Данные из ~/data загружены в базу!")
 except Exception as e:
-    print(f"Ошибка восстановления данных: {e}")
+    print(f"Ошибка загрузки данных: {e}")
 finally:
     if 'cursor' in locals():
         cursor.close()
@@ -126,7 +86,7 @@ finally:
 EOF
 }
 
-# Сохранение данных из /data в базу перед завершением
+# Сохранение данных в базу перед завершением
 save_data_to_db() {
     python - <<EOF
 import psycopg2
@@ -138,20 +98,17 @@ db_url = "$DATABASE_URL"
 try:
     conn = psycopg2.connect(db_url)
     cursor = conn.cursor()
-    if os.path.exists(data_dir):
-        for filename in os.listdir(data_dir):
-            filepath = os.path.join(data_dir, filename)
-            if os.path.isfile(filepath):
-                with open(filepath, 'rb') as f:
-                    content = f.read()
-                cursor.execute("""
-                    INSERT INTO cell_data (filename, content)
-                    VALUES (%s, %s)
-                    ON CONFLICT (filename)
-                    DO UPDATE SET content = EXCLUDED.content, timestamp = CURRENT_TIMESTAMP;
-                """, (filename, psycopg2.Binary(content)))
-    # Обновляем состояние инстанции на "засыпание"
-    cursor.execute("INSERT INTO instance_state (state, last_shutdown) VALUES ('sleeping', CURRENT_TIMESTAMP);")
+    for filename in os.listdir(data_dir):
+        filepath = os.path.join(data_dir, filename)
+        if os.path.isfile(filepath):
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            cursor.execute("""
+                INSERT INTO cell_data (filename, content)
+                VALUES (%s, %s)
+                ON CONFLICT (filename)
+                DO UPDATE SET content = EXCLUDED.content, timestamp = CURRENT_TIMESTAMP;
+            """, (filename, content))
     conn.commit()
     print("Данные сохранены в базу перед завершением!")
 except Exception as e:
@@ -193,12 +150,11 @@ monitor_forbidden() {
 }
 monitor_forbidden &
 
-# Инициализация, проверка состояния и восстановление данных
+# Инициализация и загрузка данных
 init_db
-check_instance_state
-restore_data_from_db
+load_data_to_db
 
-# Перехват SIGTERM от Render для сохранения данных перед "засыпанием"
+# Обработка завершения процесса
 trap 'save_data_to_db; exit 0' SIGTERM SIGINT
 
 # Запуск приложения
