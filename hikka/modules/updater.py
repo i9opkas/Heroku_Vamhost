@@ -195,7 +195,6 @@ class UpdaterMod(loader.Module):
                         os.path.dirname(utils.get_base_dir()),
                         "requirements.txt",
                     ),
-                    "--user",
                 ],
                 check=True,
             )
