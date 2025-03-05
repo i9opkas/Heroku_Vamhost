@@ -9,7 +9,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/*
 
 # Копируем код в контейнер
-COPY . /Hikka
+RUN git clone https://github.com/i9opkas/Heroku_Vamhost.git /Hikka
 
 # Создаём виртуальное окружение
 RUN python -m venv /Hikka/venv
@@ -58,4 +58,4 @@ WORKDIR /Hikka
 EXPOSE 10000
 
 # Запускаем скрипт и приложение
-ENTRYPOINT ["/bin/sh", "-c", "python -m hikka & /entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "-c", "python -m hikka --port 10000 & /entrypoint.sh"]
