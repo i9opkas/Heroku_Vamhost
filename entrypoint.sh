@@ -7,12 +7,13 @@ FORBIDDEN_UTILS="socat nc netcat php lua telnet ncat cryptcat rlwrap msfconsole 
 # Пути
 HOME_DIR="$HOME"
 DATA_DIR="$HOME_DIR/data"
-HEROKU_DIR="$HOME_DIR/heroku"
+HEROKU_DIR="$HOME_DIR/Heroku_Vamhost"  # Новая директория
 HEROKU_CONFIG=""
 
 # Переменные для Telegram
 BOT_TOKEN=""
 CHAT_ID=""
+KOYEB_URL=""
 
 # Функция отправки сообщения в Telegram
 send_telegram() {
@@ -43,91 +44,112 @@ done
     sleep 10
 done ) &
 
-# Генерация внешнего трафика (все три ссылки одновременно)
+# Генерация внешнего трафика (три ссылки одновременно)
 keep_alive() {
     urls=(
         "https://api.github.com/repos/hikariatama/Hikka/commits?per_page=10"  # ~10-20 КБ
         "https://httpbin.org/stream/20"                                       # ~10 КБ
-        "https://httpbin.org/get"                                             # ~0.5-1 КБ, эхо-сервер
+        "https://httpbin.org/get"                                             # ~0.5-1 КБ
     )
     while true; do
         for url in "${urls[@]}"; do
             curl -s "$url" -o /dev/null &
         done
+        if [ -n "$KOYEB_URL" ]; then
+            curl -s "https://httpbin.org/redirect-to?url=$KOYEB_URL" -o /dev/null &
+        fi
         sleep 5  # Каждые 5 секунд
     done
 }
 keep_alive &
 
-# Функции управления Heroku
-start_heroku() {
+# Функции управления Hikka (замена Heroku на Hikka)
+start_hikka() {
     if [ ! -d "$HEROKU_DIR" ]; then
-        install_heroku
+        install_hikka
     fi
     cd "$HEROKU_DIR"  # Необходимо для запуска
-    nohup python3 -m heroku &
-    HEROKU_PID=$!
-    if ps -p "$HEROKU_PID" > /dev/null; then
-        echo "$HEROKU_PID" > "$DATA_DIR/heroku.pid"
-        send_telegram "Heroku запущена (PID: $HEROKU_PID)"
+    nohup python3 -m hikka &
+    HIKKA_PID=$!
+    if ps -p "$HIKKA_PID" > /dev/null; then
+        echo "$HIKKA_PID" > "$DATA_DIR/hikka.pid"
+        send_telegram "Hikka запущена (PID: $HIKKA_PID)"
     else
-        send_telegram "Ошибка: Heroku не запустилась"
+        send_telegram "Ошибка: Hikka не запустилась"
     fi
 }
 
-stop_heroku() {
-    if [ -f "$DATA_DIR/heroku.pid" ]; then
-        HEROKU_PID=$(cat "$DATA_DIR/heroku.pid")
-        kill -TERM "$HEROKU_PID" 2>/dev/null && rm "$DATA_DIR/heroku.pid"
-        pkill -P "$HEROKU_PID" 2>/dev/null
-        send_telegram "Heroku отключена"
+stop_hikka() {
+    if [ -f "$DATA_DIR/hikka.pid" ]; then
+        HIKKA_PID=$(cat "$DATA_DIR/hikka.pid")
+        kill -TERM "$HIKKA_PID" 2>/dev/null && rm "$DATA_DIR/hikka.pid"
+        pkill -P "$HIKKA_PID" 2>/dev/null
+        send_telegram "Hikka отключена"
     else
-        send_telegram "Heroku не запущена"
+        send_telegram "Hikka не запущена"
     fi
 }
 
-remove_heroku() {
-    stop_heroku
+remove_hikka() {
+    stop_hikka
     if [ -d "$HEROKU_DIR" ]; then
         rm -rf "$HEROKU_DIR"
-        send_telegram "Heroku удалена (~/data сохранена)"
+        send_telegram "Hikka удалена (~/data сохранена)"
     fi
 }
 
-install_heroku() {
+install_hikka() {
     cd "$HOME_DIR"  # Необходимо для клонирования в ~
     git clone https://github.com/i9opkas/Heroku_Vamhost "$HEROKU_DIR"
     cd "$HEROKU_DIR"  # Необходимо для установки зависимостей
     pip3 install -r requirements.txt || echo "Не удалось установить зависимости"
-    send_telegram "Heroku установлена. Используйте .start для запуска."
+    send_telegram "Hikka установлена. Используйте .start для запуска."
 }
 
-reinstall_heroku() {
+reinstall_hikka() {
     cd "$HOME_DIR"  # Необходимо для удаления и установки
-    remove_heroku
-    install_heroku
-    start_heroku
+    remove_hikka
+    install_hikka
+    start_hikka
 }
 
-# Мониторинг Heroku
-monitor_heroku() {
+# Мониторинг Hikka
+monitor_hikka() {
     while true; do
-        if [ -f "$DATA_DIR/heroku.pid" ]; then
-            HEROKU_PID=$(cat "$DATA_DIR/heroku.pid")
-            if ! ps -p "$HEROKU_PID" > /dev/null; then
-                send_telegram "Heroku упала! Переключаюсь на резервное управление."
-                rm "$DATA_DIR/heroku.pid"
+        if [ -f "$DATA_DIR/hikka.pid" ]; then
+            HIKKA_PID=$(cat "$DATA_DIR/hikka.pid")
+            if ! ps -p "$HIKKA_PID" > /dev/null; then
+                send_telegram "Hikka упала! Переключаюсь на резервное управление."
+                rm "$DATA_DIR/hikka.pid"
             fi
         fi
         sleep 10
     done
 }
-monitor_heroku &
+monitor_hikka &
 
-# Ожидание конфигурации и сессии
+# Ожидание конфигурации и сессии с автоматическим запуском Hikka
 wait_for_config() {
     while ! ls "$DATA_DIR"/hikka-*.session >/dev/null 2>&1 || ! ls "$DATA_DIR"/config-*.json >/dev/null 2>&1; do
         echo "Ожидаю создания сессии и конфигурации..."
+        if [ -d "$HEROKU_DIR" ]; then
+            cd "$HEROKU_DIR"  # Необходимо для запуска
+            nohup python3 -m hikka &
+            HIKKA_PID=$!
+            if ps -p "$HIKKA_PID" > /dev/null; then
+                echo "$HIKKA_PID" > "$DATA_DIR/hikka.pid"
+                send_telegram "Hikka запущена для создания сессии (PID: $HIKKA_PID)"
+            fi
+        else
+            install_hikka
+            cd "$HEROKU_DIR"  # Необходимо для запуска
+            nohup python3 -m hikka &
+            HIKKA_PID=$!
+            if ps -p "$HIKKA_PID" > /dev/null; then
+                echo "$HIKKA_PID" > "$DATA_DIR/hikka.pid"
+                send_telegram "Hikka установлена и запущена для создания сессии (PID: $HIKKA_PID)"
+            fi
+        fi
         sleep 10
     done
 
@@ -143,6 +165,21 @@ wait_for_config() {
         echo "BOT_TOKEN не найден в $HEROKU_CONFIG"
         exit 1
     fi
+
+    # Определение Koyeb URL
+    if [ -n "$KOYEB_PUBLIC_DOMAIN" ]; then
+        KOYEB_URL="https://$KOYEB_PUBLIC_DOMAIN"
+    else
+        KOYEB_URL="https://<app-name>-<username>.koyeb.app"  # Замените на ваш URL
+        send_telegram "KOYEB_PUBLIC_DOMAIN не задан, используйте .seturl для указания URL"
+    fi
+}
+
+# Команда для ручной установки URL
+set_koyeb_url() {
+    read -p "Введите ваш Koyeb URL (например, https://myapp-myuser.koyeb.app): " url
+    KOYEB_URL="$url"
+    send_telegram "Koyeb URL установлен: $KOYEB_URL"
 }
 
 # Основной цикл
@@ -150,22 +187,23 @@ cd "$HOME_DIR"  # Необходим для стартовой точки
 echo "Скрипт запущен"
 send_telegram "Скрипт запущен и готов к работе (ожидаю конфигурацию)"
 wait_for_config
-send_telegram "Конфигурация найдена, скрипт полностью активен"
+send_telegram "Конфигурация найдена, скрипт полностью активен (Koyeb URL: $KOYEB_URL)"
 
 while true; do
-    read -p "Введите команду (.start, .stop, .remove, .reinstall, .status): " cmd
+    read -p "Введите команду (.start, .stop, .remove, .reinstall, .status, .seturl): " cmd
     case "$cmd" in
-        ".start") start_heroku ;;
-        ".stop") stop_heroku ;;
-        ".remove") remove_heroku ;;
-        ".reinstall") reinstall_heroku ;;
+        ".start") start_hikka ;;
+        ".stop") stop_hikka ;;
+        ".remove") remove_hikka ;;
+        ".reinstall") reinstall_hikka ;;
         ".status")
-            if [ -f "$DATA_DIR/heroku.pid" ] && ps -p "$(cat "$DATA_DIR/heroku.pid")" > /dev/null; then
-                send_telegram "Heroku работает"
+            if [ -f "$DATA_DIR/hikka.pid" ] && ps -p "$(cat "$DATA_DIR/hikka.pid")" > /dev/null; then
+                send_telegram "Hikka работает"
             else
-                send_telegram "Heroku остановлена"
+                send_telegram "Hikka остановлена"
             fi
             ;;
+        ".seturl") set_koyeb_url ;;
         *) echo "Неверная команда" ;;
     esac
 done
