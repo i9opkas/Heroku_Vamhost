@@ -9,7 +9,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/*
 
 # Копируем код в контейнер
-COPY . /Hikka
+RUN git clone https://github.com/i9opkas/Heroku_Vamhost.git /Hikka
 
 # Создаём виртуальное окружение
 RUN python -m venv /Hikka/venv
